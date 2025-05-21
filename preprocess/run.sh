@@ -273,17 +273,17 @@ to_json()
 #     start_rn=$(( start_rn + line_num ))
 # done
 
-title "生成极小程序测试用推理数据集"
-mkdir -p $DATA_DIR/inference_data_for_test/DNA_data
-cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/inference_data_for_test/protein_data.csv
-line_num_for_test=10
-for accession in "${accessions[@]}"
-do
-    printf "index,dna\n" \
-        > $DATA_DIR/inference_data_for_test/DNA_data/${accession}.csv
-    shuf -n $line_num_for_test \
-        --random-source=<(get_seeded_random 63036) \
-        $DATA_DIR/train_data/DNA_data/${accession}.csv |
-    cut -d, -f1-2 \
-        >> $DATA_DIR/inference_data_for_test/DNA_data/${accession}.csv
-done
+# title "生成极小程序测试用推理数据集"
+# mkdir -p $DATA_DIR/inference_data_for_test/DNA_data
+# cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/inference_data_for_test/protein_data.csv
+# line_num_for_test=10
+# for accession in "${accessions[@]}"
+# do
+#     printf "index,dna\n" \
+#         > $DATA_DIR/inference_data_for_test/DNA_data/${accession}.csv
+#     shuf -n $line_num_for_test \
+#         --random-source=<(get_seeded_random 63036) \
+#         $DATA_DIR/train_data/DNA_data/${accession}.csv |
+#     cut -d, -f1-2 \
+#         >> $DATA_DIR/inference_data_for_test/DNA_data/${accession}.csv
+# done

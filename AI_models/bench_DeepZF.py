@@ -32,7 +32,6 @@ import numpy as np
 from datasets import load_dataset
 from bind_transformer.load_data import DataCollator, train_validation_test_split
 
-
 ds_protein = load_dataset(
     "csv",
     data_files=(args.data_dir / "protein_data.csv").as_posix(),

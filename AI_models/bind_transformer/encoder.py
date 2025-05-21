@@ -3,7 +3,7 @@ from torch import nn
 
 # torch does not import opt_einsum as backend by default. import opt_einsum manually will enable it.
 from torch.backends import opt_einsum
-from einops import rearrange, einsum
+from einops import einsum
 from einops.layers.torch import EinMix
 from torchtune.modules import RotaryPositionalEmbeddings, MultiHeadAttention
 from .common import Residual
@@ -350,15 +350,18 @@ class DNA_Encoder(nn.Module):
         # DNA mask
         dna_mask = dna_ids != 0
 
-        # DNA自注意力编码
         dna_embs = self.embed(dna_ids)
         for i in range(self.depth):
+            # DNA自注意力编码
             dna_embs_rms = self.rms_norms[i](dna_embs)
             dna_embs = dna_embs + self.self_attentions[i](
                 x=dna_embs_rms,
                 y=dna_embs_rms,
                 mask=einsum(dna_mask, dna_mask, "b s1, b s2 -> b s1 s2"),
             )
+
+            # Only use the embedding for CLS token.
+            dna_embs = dna_embs[:, [0], :]
 
             # DNA和氨基酸交叉注意力
             dna_embs_rms = self.dna_protein_rms_norms[i](dna_embs)

@@ -27,7 +27,6 @@ logger.warning("load data")
 from datasets import load_dataset
 from bind_transformer.load_data import DataCollator, train_validation_test_split
 
-
 ds_protein = load_dataset(
     "csv",
     data_files=(args.data_dir / "protein_data.csv").as_posix(),
@@ -126,40 +125,17 @@ resource.setrlimit(resource.RLIMIT_AS, (50 * 1024**3, hard))
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.linear_model import RidgeClassifierCV
+from sklearn.linear_model import RidgeClassifierCV, LogisticRegressionCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import LinearSVC
 
 classifiers = {
     "LDA": LinearDiscriminantAnalysis(),
     "Gaussian Process": GaussianProcessClassifier(random_state=63036),
     "QDA": QuadraticDiscriminantAnalysis(),
     "Ridge Classifier": RidgeClassifierCV(),
-}
-
-from sklearn.linear_model import (
-    LogisticRegressionCV,
-    SGDClassifier,
-    Perceptron,
-    PassiveAggressiveClassifier,
-)
-from sklearn.neural_network import MLPClassifier
-from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import LinearSVC
-from sklearn.tree import DecisionTreeClassifier
-
-classifiers = {
-    "SGD Classifier": SGDClassifier(max_iter=1000, random_state=63036),
-    "Perceptron": Perceptron(max_iter=1000, random_state=63036),
-    "PassiveAggressiveClassifier": PassiveAggressiveClassifier(
-        max_iter=1000, random_state=63036
-    ),
     "Nearest Neighbors": KNeighborsClassifier(),
-    "Decision Tree": DecisionTreeClassifier(random_state=63036),
-    "Random Forest": RandomForestClassifier(random_state=63036),
-    "AdaBoost": AdaBoostClassifier(random_state=63036),
-    "Naive Bayes": GaussianNB(),
     "Neural Net": MLPClassifier(
         hidden_layer_sizes=(256, 256),
         activation="logistic",
@@ -171,8 +147,31 @@ classifiers = {
         early_stopping=True,
     ),
     "Linear SVC": LinearSVC(max_iter=1000, random_state=63036),
-    "Dummy": DummyClassifier(strategy="stratified", random_state=63036),
     "Logistic Regression": LogisticRegressionCV(max_iter=1000, random_state=63036),
+}
+
+# enough memory classifier
+from sklearn.linear_model import (
+    SGDClassifier,
+    Perceptron,
+    PassiveAggressiveClassifier,
+)
+from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+
+classifiers = {
+    "SGD Classifier": SGDClassifier(max_iter=1000, random_state=63036),
+    "Perceptron": Perceptron(max_iter=1000, random_state=63036),
+    "PassiveAggressiveClassifier": PassiveAggressiveClassifier(
+        max_iter=1000, random_state=63036
+    ),
+    "Decision Tree": DecisionTreeClassifier(random_state=63036),
+    "Random Forest": RandomForestClassifier(random_state=63036),
+    "AdaBoost": AdaBoostClassifier(random_state=63036),
+    "Naive Bayes": GaussianNB(),
+    "Dummy": DummyClassifier(strategy="stratified", random_state=63036),
 }
 
 import os
@@ -180,10 +179,13 @@ import joblib
 
 for name, classifier in classifiers.items():
     if os.path.exists(f"scikit-learn/{name}.pkl"):
+        logger.warning(f"load {classifier}")
         classifier = joblib.load(f"scikit-learn/{name}.pkl")
     else:
+        logger.warning(f"train {classifier}")
         classifier.fit(train_eval_ids, train_eval_bind)
         joblib.dump(classifier, f"scikit-learn/{name}.pkl")
+    logger.warning(f"predict {classifier}")
     pred = classifier.predict(test_ids)
     with open("scikit-learn/bench.log", "a") as fd:
         fd.write(f"""{name}\n{hard_metric(pred, test_bind)}\n""")

@@ -201,7 +201,7 @@ class BindTransformerModel(PreTrainedModel):
         protein_ids: (batch_size, protein_length).
         second_ids: (batch_size, protein_length).
         DNA_ids: (batch_size, DNA_length + 1). +1是因为DNA开头要加[CLS] mask.
-        bind: (batch_size, 2). bind[bn, 0]是不结合的概率。bind[bn, 1]是结合的概率。两者相加是1。
+        bind: (batch_size,), 1.0 for binding and 0.0 for not binding.
         output["logit"]: Binary classification logits (batch_size,).
         output["loss"]: If bind is provided, the loss is cross entropy.
         """
