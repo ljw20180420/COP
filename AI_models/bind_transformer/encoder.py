@@ -362,6 +362,7 @@ class DNA_Encoder(nn.Module):
 
             # Only use the embedding for CLS token.
             dna_embs = dna_embs[:, [0], :]
+            dna_mask = dna_mask[:, [0]]
 
             # DNA和氨基酸交叉注意力
             dna_embs_rms = self.dna_protein_rms_norms[i](dna_embs)
