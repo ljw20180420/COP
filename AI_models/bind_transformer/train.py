@@ -229,6 +229,9 @@ def train(
     reg_l1: float,
     reg_l2: float,
     initializer_range: float,
+    use_hyena: bool,
+    hyena_order: int,
+    hyena_filter_order: int,
     hp_study_name: str,
     hp_storage: str,
     redundant_parameters: list[dict[str, Union[str, int, float, list]]],
@@ -265,6 +268,9 @@ def train(
             "reg_l1": reg_l1,
             "reg_l2": reg_l2,
             "initializer_range": initializer_range,
+            "use_hyena": use_hyena,
+            "hyena_order": hyena_order,
+            "hyena_filter_order": hyena_filter_order,
             "seed": seed,
         }
 
@@ -287,6 +293,7 @@ def train(
         lr_scheduler_kwargs=None,  # 太复杂了
         logging_strategy="epoch",
         save_strategy="epoch",
+        save_safetensors=False,
         use_cpu=True if device == "cpu" else False,
         seed=seed,
         fp16=fp16,

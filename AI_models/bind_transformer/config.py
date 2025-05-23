@@ -271,6 +271,29 @@ def get_config(config_files):
         help="The standard deviation of the truncated_normal_initializer for initializing all weight matrices.",
     )
 
+    # hyena parameters
+    parser_hyena = parser.add_argument_group(
+        title="hyena", description="Parameters for hyena."
+    )
+    parser_hyena.add_argument(
+        "--use_hyena",
+        type=bool,
+        required=True,
+        help="Whether replace self-attention by hyena.",
+    )
+    parser_hyena.add_argument(
+        "--hyena_order",
+        type=int,
+        required=True,
+        help="Order of hyena.",
+    )
+    parser_hyena.add_argument(
+        "--hyena_filter_order",
+        type=int,
+        required=True,
+        help="Dimension of hyena MLP hidden layers.",
+    )
+
     # hpo (hyperparameter optimization) parameters
     parser_hpo = parser.add_argument_group(
         title="hpo", description="Hyperparameter optimization."

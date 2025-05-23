@@ -7,6 +7,7 @@ from einops import einsum
 from einops.layers.torch import EinMix
 from torchtune.modules import RotaryPositionalEmbeddings, MultiHeadAttention
 from .common import Residual
+from .non_causality_hyena import HyenaOperator
 
 
 class Second_Encoder(nn.Module):
@@ -21,10 +22,14 @@ class Second_Encoder(nn.Module):
         dim_ffn: int,
         dropout: float,
         norm_eps: float,
+        use_hyena: bool,
+        hyena_order: int,
+        hyena_filter_order: int,
     ) -> None:
         super().__init__()
 
         self.depth = depth
+        self.use_hyena = use_hyena
 
         # 二级结构编码器: 蛋白质9种二级结构+锌指结构+KRAB总共11种二级结构的token编码（算上mask token有12个）
         self.embed = nn.Sequential(
@@ -41,45 +46,56 @@ class Second_Encoder(nn.Module):
 
         self.self_attentions = nn.ModuleList(
             [
-                MultiHeadAttention(
-                    embed_dim=dim_emb,
-                    num_heads=num_heads,
-                    num_kv_heads=num_heads,
-                    head_dim=dim_heads,
-                    q_proj=EinMix(
-                        "b s d -> b s nhd",
-                        weight_shape="d nhd",
-                        bias_shape="nhd",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    k_proj=EinMix(
-                        "b s d -> b s nhd",
-                        weight_shape="d nhd",
-                        bias_shape="nhd",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    v_proj=EinMix(
-                        "b s d -> b s nhd",
-                        weight_shape="d nhd",
-                        bias_shape="nhd",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    output_proj=EinMix(
-                        "b s nhd -> b s d",
-                        weight_shape="nhd d",
-                        bias_shape="d",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    pos_embeddings=RotaryPositionalEmbeddings(
-                        dim=dim_heads, max_seq_len=max_num_tokens
-                    ),
-                    max_seq_len=max_num_tokens,
-                    is_causal=False,
-                    attn_dropout=dropout,
+                (
+                    MultiHeadAttention(
+                        embed_dim=dim_emb,
+                        num_heads=num_heads,
+                        num_kv_heads=num_heads,
+                        head_dim=dim_heads,
+                        q_proj=EinMix(
+                            "b s d -> b s nhd",
+                            weight_shape="d nhd",
+                            bias_shape="nhd",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        k_proj=EinMix(
+                            "b s d -> b s nhd",
+                            weight_shape="d nhd",
+                            bias_shape="nhd",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        v_proj=EinMix(
+                            "b s d -> b s nhd",
+                            weight_shape="d nhd",
+                            bias_shape="nhd",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        output_proj=EinMix(
+                            "b s nhd -> b s d",
+                            weight_shape="nhd d",
+                            bias_shape="d",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        pos_embeddings=RotaryPositionalEmbeddings(
+                            dim=dim_heads, max_seq_len=max_num_tokens
+                        ),
+                        max_seq_len=max_num_tokens,
+                        is_causal=False,
+                        attn_dropout=dropout,
+                    )
+                    if not use_hyena
+                    else HyenaOperator(
+                        d_model=dim_emb,
+                        l_max=max_num_tokens,
+                        order=hyena_order,
+                        filter_order=hyena_filter_order,
+                        dropout=dropout,
+                        filter_dropout=dropout,
+                    )
                 )
                 for _ in range(depth)
             ]
@@ -121,9 +137,15 @@ class Second_Encoder(nn.Module):
         embs = self.embed(second_ids)
         for i in range(self.depth):
             embs_rms = self.rms_norms[i](embs)
-            embs = embs + self.self_attentions[i](
-                x=embs_rms, y=embs_rms, mask=einsum(mask, mask, "b s1, b s2 -> b s1 s2")
-            )
+            if not self.use_hyena:
+                embs = embs + self.self_attentions[i](
+                    x=embs_rms,
+                    y=embs_rms,
+                    mask=einsum(mask, mask, "b s1, b s2 -> b s1 s2"),
+                )
+            else:
+                # 这里的self_attentions[i]其实是hyena
+                embs = embs + self.self_attentions[i](embs_rms)
             embs = self.ffns[i](embs)
 
         embs = self.last_rms_norm(embs)
@@ -143,10 +165,14 @@ class DNA_Encoder(nn.Module):
         dim_ffn: int,
         dropout: float,
         norm_eps: float,
+        use_hyena: bool,
+        hyena_order: int,
+        hyena_filter_order: int,
     ) -> None:
         super().__init__()
 
         self.depth = depth
+        self.use_hyena = use_hyena
 
         # DNA4个核苷酸的token编码（算上[CLS] token和mask token有6个）
         # 关于[CLS] token，参考BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
@@ -164,46 +190,57 @@ class DNA_Encoder(nn.Module):
 
         self.self_attentions = nn.ModuleList(
             [
-                MultiHeadAttention(
-                    embed_dim=dim_emb,
-                    num_heads=num_heads,
-                    num_kv_heads=num_heads,
-                    head_dim=dim_heads,
-                    q_proj=EinMix(
-                        "b s d -> b s nhd",
-                        weight_shape="d nhd",
-                        bias_shape="nhd",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    k_proj=EinMix(
-                        "b s d -> b s nhd",
-                        weight_shape="d nhd",
-                        bias_shape="nhd",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    v_proj=EinMix(
-                        "b s d -> b s nhd",
-                        weight_shape="d nhd",
-                        bias_shape="nhd",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    output_proj=EinMix(
-                        "b s nhd -> b s d",
-                        weight_shape="nhd d",
-                        bias_shape="d",
-                        d=dim_emb,
-                        nhd=num_heads * dim_heads,
-                    ),
-                    # DNA开头有个[CLS] token, 所以最大长度要+1
-                    pos_embeddings=RotaryPositionalEmbeddings(
-                        dim=dim_heads, max_seq_len=max_num_tokens + 1
-                    ),
-                    max_seq_len=max_num_tokens + 1,
-                    is_causal=False,
-                    attn_dropout=dropout,
+                (
+                    MultiHeadAttention(
+                        embed_dim=dim_emb,
+                        num_heads=num_heads,
+                        num_kv_heads=num_heads,
+                        head_dim=dim_heads,
+                        q_proj=EinMix(
+                            "b s d -> b s nhd",
+                            weight_shape="d nhd",
+                            bias_shape="nhd",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        k_proj=EinMix(
+                            "b s d -> b s nhd",
+                            weight_shape="d nhd",
+                            bias_shape="nhd",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        v_proj=EinMix(
+                            "b s d -> b s nhd",
+                            weight_shape="d nhd",
+                            bias_shape="nhd",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        output_proj=EinMix(
+                            "b s nhd -> b s d",
+                            weight_shape="nhd d",
+                            bias_shape="d",
+                            d=dim_emb,
+                            nhd=num_heads * dim_heads,
+                        ),
+                        # DNA开头有个[CLS] token, 所以最大长度要+1
+                        pos_embeddings=RotaryPositionalEmbeddings(
+                            dim=dim_heads, max_seq_len=max_num_tokens + 1
+                        ),
+                        max_seq_len=max_num_tokens + 1,
+                        is_causal=False,
+                        attn_dropout=dropout,
+                    )
+                    if not use_hyena
+                    else HyenaOperator(
+                        d_model=dim_emb,
+                        l_max=max_num_tokens + 1,
+                        order=hyena_order,
+                        filter_order=hyena_filter_order,
+                        dropout=dropout,
+                        filter_dropout=dropout,
+                    )
                 )
                 for _ in range(depth)
             ]
@@ -354,11 +391,15 @@ class DNA_Encoder(nn.Module):
         for i in range(self.depth):
             # DNA自注意力编码
             dna_embs_rms = self.rms_norms[i](dna_embs)
-            dna_embs = dna_embs + self.self_attentions[i](
-                x=dna_embs_rms,
-                y=dna_embs_rms,
-                mask=einsum(dna_mask, dna_mask, "b s1, b s2 -> b s1 s2"),
-            )
+            if not self.use_hyena:
+                dna_embs = dna_embs + self.self_attentions[i](
+                    x=dna_embs_rms,
+                    y=dna_embs_rms,
+                    mask=einsum(dna_mask, dna_mask, "b s1, b s2 -> b s1 s2"),
+                )
+            else:
+                # 这里的self_attentions[i]其实是hyena
+                dna_embs = dna_embs + self.self_attentions[i](dna_embs_rms)
 
             # Only use the embedding for CLS token.
             dna_embs = dna_embs[:, [0], :]

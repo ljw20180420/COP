@@ -39,6 +39,9 @@ class BindTransformerConfig(PretrainedConfig):
         reg_l1: float = None,
         reg_l2: float = None,
         initializer_range: float = None,
+        use_hyena: bool = None,
+        hyena_order: int = None,
+        hyena_filter_order: int = None,
         seed: int = None,
         **kwargs,
     ) -> None:
@@ -57,6 +60,9 @@ class BindTransformerConfig(PretrainedConfig):
         self.reg_l1 = reg_l1
         self.reg_l2 = reg_l2
         self.initializer_range = initializer_range
+        self.use_hyena = use_hyena
+        self.hyena_order = hyena_order
+        self.hyena_filter_order = hyena_filter_order
         self.seed = seed
         super().__init__(
             **kwargs,
@@ -87,6 +93,9 @@ class BindTransformerModel(PreTrainedModel):
             config.dim_ffn,
             config.dropout,
             config.norm_eps,
+            config.use_hyena,
+            config.hyena_order,
+            config.hyena_filter_order,
         )
 
         # DNA编码器
@@ -100,6 +109,9 @@ class BindTransformerModel(PreTrainedModel):
             config.dim_ffn,
             config.dropout,
             config.norm_eps,
+            config.use_hyena,
+            config.hyena_order,
+            config.hyena_filter_order,
         )
 
         # huggingface的分类头
