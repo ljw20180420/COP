@@ -25,7 +25,9 @@ def requests_until_success(method, url, **kwargs):
     return response
 
 
-df = pd.read_table(sys.stdin, header=0, sep="\t", na_filter=False)
+df = pd.read_table(
+    "uniprot_mouse_C2H2_protein.tsv", header=0, usecols=["Entry"], na_filter=False
+)
 for accession in df["Entry"]:
     if os.path.exists(f"get_mmcif_from_alphafoldDB/{accession}.pdb"):
         continue

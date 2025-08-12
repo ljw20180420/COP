@@ -1,8 +1,6 @@
 **/__pycache__
 .conda
 database/logs
-.env
-.gradio
 .vscode
 nextflow/pipelines
 nextflow/runs/**/results
@@ -15,7 +13,7 @@ tmp_b_c.txt
 **/c2h2_motifs
 **.dbs
 preprocess/protein.tsv
-preprocess/secondary_structure.tsv
+preprocess/secondary_structure.csv
 preprocess/uniprot_mouse_C2H2_protein.tsv
 preprocess/know_motif/jaspar/JASPAR2024_*
 preprocess/know_motif/hocomoco/H13CORE_meme_format.meme
@@ -32,6 +30,5 @@ AI_models/DeepZF/Data
 AI_models/DeepZF/BindZF_predictor/code/model.p
 AI_models/DeepZF/Results
 AI_models/DeepZF/zinc_finger_protein_motifs
-reference
 AI_models/bind_transformer/config_custom.ini
 *.bak

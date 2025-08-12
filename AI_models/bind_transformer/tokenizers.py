@@ -10,7 +10,7 @@ class DNA_Tokenizer:
     m: mask token
     c: [CLS]token
     ACGT: 碱基token
-    N: 位置碱基
+    N: 未知碱基
     从输入的DNA中截取DNA_length长度的DNA序列, 并在开头加入分类token c
     如果DNA_length <= 0, 使用10 + 3 * zinc_num作为DNA_length
     """

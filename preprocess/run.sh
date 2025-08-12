@@ -13,28 +13,30 @@ title() {
 # title "下载蛋白文件"
 # ./uniprot_download.py \
 #     'ft_zn_fing:C2H2' \
-#     'organism_name:"Mus musculus"' \
-#     3> uniprot_mouse_C2H2_protein.tsv
+#     'organism_name:"Mus musculus"'
 
 # title "下载蛋白结构"
 # ./get_mmcif_from_alphafoldDB.py \
-#     < uniprot_mouse_C2H2_protein.tsv
 
 # title "计算蛋白二级结构"
 # # dssp需要libcifpp: sudo apt install libcifpp-dev
 # # dssp需要更新libcifpp的资源文件: https://github.com/PDB-REDO/dssp/issues/3
-# # curl -o /var/cache/libcifpp/components.cif https://files.wwpdb.org/pub/pdb/data/monomers/components.cif
-# # curl -o /var/cache/libcifpp/mmcif_pdbx.dic https://mmcif.wwpdb.org/dictionaries/ascii/mmcif_pdbx_v50.dic
-# # curl -o /var/cache/libcifpp/mmcif_ma.dic https://github.com/ihmwg/ModelCIF/raw/master/dist/mmcif_ma.dic
-# ./dssp.py \
-#     3> secondary_structure.tsv
+# printf "accession,sequence,secondary_structure" >secondary_structure.csv
+# for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
+# do
+#     stem=${mmcif##*/}
+#     stem=${stem%.mmcif}
+#     printf "%s," ${stem} >> secondary_structure.csv
+#     ../dssp/build/mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
+#     printf "," >> secondary_structure.csv
+#     ../dssp/build/mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
+#     printf "\n" >> secondary_structure.csv
+# done
 
-# title "去掉没有结构的蛋白"
+# title "融合蛋白和二级结构, 标注zinc finger, KRAB, disorder"
 # # 去掉uniprot和alphafoldDB蛋白长度不相同的蛋白
 # # 在原来9种二级结构（包括没有结构）的基础上，标注KRAB和锌指蛋白结构
 # ./parse_ft.py \
-#     < uniprot_mouse_C2H2_protein.tsv \
-#     4< secondary_structure.tsv \
 #     3> protein.tsv
 
 title "收集所有accession"
@@ -219,26 +221,26 @@ done
 #     printf "%d\n" $zinc_num >> $DATA_DIR/train_data/protein_data.csv
 # done
 
-title "生成小训练数据集"
-get_seeded_random()
-{
-    seed="$1"
-    openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
-    </dev/zero 2>/dev/null
-}
+# title "生成小训练数据集"
+# get_seeded_random()
+# {
+#     seed="$1"
+#     openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+#     </dev/zero 2>/dev/null
+# }
 
-to_json()
-{
-    awk -F "," -v start_rn=$1 '
-        {
-            printf("{\"rn\": %d, \"index\": %d, \"dna\": \"%s\", \"distance\": [%d", start_rn + NR - 1, $1, $2, $3)
-            for (i=4; i<=NF; ++i) {
-                printf(",%d", $i)
-            }
-            printf("]}\n")
-        }
-    '
-}
+# to_json()
+# {
+#     awk -F "," -v start_rn=$1 '
+#         {
+#             printf("{\"rn\": %d, \"index\": %d, \"dna\": \"%s\", \"distance\": [%d", start_rn + NR - 1, $1, $2, $3)
+#             for (i=4; i<=NF; ++i) {
+#                 printf(",%d", $i)
+#             }
+#             printf("]}\n")
+#         }
+#     '
+# }
 
 # mkdir -p $DATA_DIR/small_train_data/DNA_data
 # cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv

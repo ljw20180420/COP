@@ -1,8 +1,6 @@
 bioconda::bioframe
-conda-forge::biopython
 bioconda::blast
 bioconda::ucsc-bedclip
-conda-forge::configargparse
 
 conda-forge::datasets
 conda-forge::diffusers
@@ -13,6 +11,7 @@ conda-forge::tensorboard
 conda-forge::opt_einsum
 conda-forge::einops
 conda-forge::optuna
+conda-forge::optuna-dashboard
 conda-forge::lightgbm
 
 bioconda::igv
