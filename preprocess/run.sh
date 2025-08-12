@@ -44,7 +44,7 @@ for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
 do
     accession=$(basename ${narrowPeak%%.*})
     # 如果accession蛋白没有二级结构
-    if ! grep -F $accession protein.tsv > /dev/null
+    if ! grep -F $accession protein.csv > /dev/null
     then
         printf "%s没有二级结构, 不处理\n" $accession >&2
         continue
@@ -57,6 +57,11 @@ done
 # cluster_max_distance="-50"
 # for accession in "${accessions[@]}"
 # do
+#     if [ -f "$DATA_DIR/clustered/$accession.clustered.narrowPeak" ]
+#     then
+#         continue
+#     fi
+#     printf "calculate peak cluster for %s\n" $accession
 #     bedtools intersect -v \
 #         -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
 #         -b $GENOME_BLACK |
@@ -70,6 +75,11 @@ done
 # cluster_quantile=0.9
 # for accession in "${accessions[@]}"
 # do
+#     if [ -f "$DATA_DIR/selected/$accession.selected.narrowPeak" ]
+#     then
+#         continue
+#     fi
+#     printf "select peak for %s\n" $accession
 #     ./peak_cluster_select.py \
 #         < $DATA_DIR/clustered/$accession.clustered.narrowPeak \
 #         $cluster_quantile \
@@ -80,6 +90,11 @@ done
 # mkdir -p $DATA_DIR/filtered
 # for accession in "${accessions[@]}"
 # do
+#     if [ -f "$DATA_DIR/filtered/$accession.filtered.narrowPeak" ]
+#     then
+#         continue
+#     fi
+#     printf "filtered peak for %s\n" $accession
 #     wlb=$(
 #         awk '{print $3 - $2}' \
 #             < $DATA_DIR/selected/$accession.selected.narrowPeak |
@@ -114,6 +129,11 @@ done
 # seq_len=256
 # for accession in "${accessions[@]}"
 # do
+#     if [ -f "$DATA_DIR/sized/$accession.sized.narrowPeak" ]
+#     then
+#         continue
+#     fi
+#     printf "resize peak for %s\n" $accession
 #     bedClip \
 #         <(
 #             awk -v seq_len=$seq_len '
@@ -137,6 +157,11 @@ done
 # mkdir -p $DATA_DIR/positive
 # for accession in "${accessions[@]}"
 # do
+#     if [ -f "$DATA_DIR/positive/$accession.positive" ]
+#     then
+#         continue
+#     fi
+#     printf "extract peak sequence for %s\n" $accession
 #     # --line-width 0 防止fasta换行
 #     paste \
 #         $DATA_DIR/sized/$accession.sized.narrowPeak \
@@ -156,6 +181,11 @@ done
 # mkdir -p $DATA_DIR/train_data/DNA_data
 # for ((i=0;i<${#accessions[@]};++i))
 # do
+#     if [ -f "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv" ]
+#     then
+#         continue
+#     fi
+#     printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
 #     accession="${accessions[$i]}"
 #     dis_files=()
 #     for accession2 in "${accessions[@]}"
@@ -205,86 +235,29 @@ done
 # for ((i=0;i<${#accessions[@]};++i))
 # do
 #     grep -F "${accessions[$i]}" \
-#         protein.tsv |
-#     cut -f1,4,5 |
-#     tr '\n\t' ',' \
+#         protein.csv |
+#     cut -d, -f1,4-8 \
 #         >> $DATA_DIR/train_data/protein_data.csv
-
-#     # 得到每个蛋白的锌指数量
-#     zinc_num=$(
-#         grep -F "${accessions[$i]}" \
-#             < uniprot_mouse_C2H2_protein.tsv |
-#             sed -r 's/^.+note="C2H2-type ([0-9]+)".+$/\1/' |
-#             sed -r '/^[^1-9]/s/^.+$/1/'
-#     )
-#     printf "%d\n" $zinc_num >> $DATA_DIR/train_data/protein_data.csv
 # done
 
-# title "生成小训练数据集"
-# get_seeded_random()
-# {
-#     seed="$1"
-#     openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
-#     </dev/zero 2>/dev/null
-# }
+get_seeded_random()
+{
+    seed="$1"
+    openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+    </dev/zero 2>/dev/null
+}
 
-# to_json()
-# {
-#     awk -F "," -v start_rn=$1 '
-#         {
-#             printf("{\"rn\": %d, \"index\": %d, \"dna\": \"%s\", \"distance\": [%d", start_rn + NR - 1, $1, $2, $3)
-#             for (i=4; i<=NF; ++i) {
-#                 printf(",%d", $i)
-#             }
-#             printf("]}\n")
-#         }
-#     '
-# }
-
-# mkdir -p $DATA_DIR/small_train_data/DNA_data
-# cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv
-# small_line_num=3000
-# start_rn=0
-# for accession in "${accessions[@]}"
-# do
-#     shuf -n $small_line_num \
-#         --random-source=<(get_seeded_random 63036) \
-#         $DATA_DIR/train_data/DNA_data/${accession}.csv |
-#     to_json $start_rn \
-#         > $DATA_DIR/small_train_data/DNA_data/${accession}.json
-#     total_line_num=$(wc -l < $DATA_DIR/train_data/DNA_data/${accession}.csv)
-#     line_num=$(( small_line_num > total_line_num ? total_line_num : small_line_num ))
-#     start_rn=$(( start_rn + line_num ))
-# done
-
-# title "生成极小程序测试用训练数据集"
-# mkdir -p $DATA_DIR/train_data_for_test/DNA_data
-# cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/train_data_for_test/protein_data.csv
-# line_num_for_test=10
-# start_rn=0
-# for accession in "${accessions[@]}"
-# do
-#     shuf -n $line_num_for_test \
-#         --random-source=<(get_seeded_random 63036) \
-#         $DATA_DIR/train_data/DNA_data/${accession}.csv |
-#     to_json $start_rn \
-#         > $DATA_DIR/train_data_for_test/DNA_data/${accession}.json
-#     total_line_num=$(wc -l < $DATA_DIR/train_data/DNA_data/${accession}.csv)
-#     line_num=$(( line_num_for_test > total_line_num ? total_line_num : line_num_for_test ))
-#     start_rn=$(( start_rn + line_num ))
-# done
-
-# title "生成极小程序测试用推理数据集"
-# mkdir -p $DATA_DIR/inference_data_for_test/DNA_data
-# cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/inference_data_for_test/protein_data.csv
-# line_num_for_test=10
-# for accession in "${accessions[@]}"
-# do
-#     printf "index,dna\n" \
-#         > $DATA_DIR/inference_data_for_test/DNA_data/${accession}.csv
-#     shuf -n $line_num_for_test \
-#         --random-source=<(get_seeded_random 63036) \
-#         $DATA_DIR/train_data/DNA_data/${accession}.csv |
-#     cut -d, -f1-2 \
-#         >> $DATA_DIR/inference_data_for_test/DNA_data/${accession}.csv
-# done
+title "生成小训练数据集"
+mkdir -p $DATA_DIR/small_train_data
+cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv
+small_line_num=3000
+> $DATA_DIR/small_train_data/DNA_data.csv
+for accession in "${accessions[@]}"
+do
+    shuf -n $small_line_num \
+        --random-source=<(get_seeded_random 63036) \
+        $DATA_DIR/train_data/DNA_data/${accession}.csv \
+        >> $DATA_DIR/small_train_data/DNA_data.csv
+done
+nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv > $DATA_DIR/small_train_data/DNA_data.csv2
+mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv

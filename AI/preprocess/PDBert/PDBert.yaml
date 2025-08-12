@@ -1,0 +1,19 @@
+class_path: AI.preprocess.PDBert.model.PDBertConfig
+init_args:
+  protein_num_tokens: 26
+  DNA_num_tokens: 8
+  dim_token: 128
+  dim_global: 512
+  protein_depth: 6
+  DNA_depth: 2
+  cross_depth: 6
+  narrow_conv_kernel: 9
+  wide_conv_kernel: 9
+  wide_conv_dilation: 5
+  attn_heads: 4
+  attn_dim_head: 64
+  pos_weight: 1.0
+  dropout: 0.1
+  protein_length: 1000
+  DNA_length: 100
+  minimal_unbind_summit_distance: 300
