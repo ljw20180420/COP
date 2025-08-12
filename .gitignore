@@ -12,7 +12,7 @@ tmp_b_c.txt
 **.mmcif
 **/c2h2_motifs
 **.dbs
-preprocess/protein.tsv
+preprocess/protein.csv
 preprocess/secondary_structure.csv
 preprocess/uniprot_mouse_C2H2_protein.tsv
 preprocess/know_motif/jaspar/JASPAR2024_*

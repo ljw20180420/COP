@@ -18,7 +18,7 @@ df = pd.read_table(
 
 df = (
     df.merge(
-        right=pd.read_table("secondary_structure.tsv", header=0, na_filter=False),
+        right=pd.read_csv("secondary_structure.csv", header=0, na_filter=False),
         left_on="Entry",
         right_on="accession",
         how="left",
@@ -26,9 +26,6 @@ df = (
     .drop(columns="accession")
     .fillna("")
 )
-
-# 去掉没有结构的蛋白和长度不符合的蛋白
-df = df.loc[df["Length"] == df["sequence"].str.len()].reset_index(drop=True)
 
 
 def parse_intervals(reg: str, literals: pd.Series):
@@ -51,21 +48,4 @@ df["KRAB"] = parse_intervals(
     re.compile(r'DOMAIN (\d+)\.\.(\d+); /note="KRAB"'), df.pop("Domain [CC]")
 )
 
-secondary_structures = []
-for zinc_fingers, KRABs, secondary_structure in zip(
-    df["zinc_finger"], df["KRAB"], df["secondary_structure"]
-):
-    secondary_structure_array = np.array(list(secondary_structure))
-    for zinc_finger in zinc_fingers:
-        secondary_structure_array[zinc_finger[0] : zinc_finger[1]] = "Z"
-    for KRAB in KRABs:
-        secondary_structure_array[KRAB[0] : KRAB[1]] = "K"
-
-    secondary_structures.append("".join(secondary_structure_array))
-
-df["secondary_structure"] = secondary_structures
-
-with open(3, "w") as fd:
-    df.loc[
-        :, ["Entry", "Reviewed", "Entry Name", "sequence", "secondary_structure"]
-    ].to_csv(fd, sep="\t", header=True, index=False)
+df.to_csv("protein.csv", header=True, index=False)

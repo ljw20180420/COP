@@ -36,8 +36,7 @@ title() {
 # title "融合蛋白和二级结构, 标注zinc finger, KRAB, disorder"
 # # 去掉uniprot和alphafoldDB蛋白长度不相同的蛋白
 # # 在原来9种二级结构（包括没有结构）的基础上，标注KRAB和锌指蛋白结构
-# ./parse_ft.py \
-#     3> protein.tsv
+# ./parse_ft.py
 
 title "收集所有accession"
 accessions=()
