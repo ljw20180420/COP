@@ -177,61 +177,64 @@ done
 #         > $DATA_DIR/positive/$accession.positive
 # done
 
-# title "计算最近交叉peak距离|生成训练数据集的DNA"
-# mkdir -p $DATA_DIR/train_data/DNA_data
-# for ((i=0;i<${#accessions[@]};++i))
-# do
-#     if [ -f "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv" ]
-#     then
-#         continue
-#     fi
-#     printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
-#     accession="${accessions[$i]}"
-#     dis_files=()
-#     for accession2 in "${accessions[@]}"
-#     do
-#         if [ "${accession2}" != "${accession}" ]
-#         then
-#             bedtools closest -d -t first \
-#                 -a <(
-#                     awk '
-#                         {
-#                             printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
-#                         }
-#                     ' $DATA_DIR/positive/${accession}.positive
-#                 ) \
-#                 -b <(
-#                     awk '
-#                         {
-#                             printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
-#                         }
-#                     ' $DATA_DIR/positive/${accession2}.positive
-#                 ) |
-#             cut -f7 \
-#                 > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
-#         else
-#             awk '{print 0}' \
-#                 $DATA_DIR/positive/${accession}.positive \
-#                 > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
-#         fi
-#         dis_files+=($DATA_DIR/train_data/DNA_data/${accession}_${accession2})
-#     done
-#     paste -d, \
-#         <(
-#             awk -v idx=$i '
-#                 {
-#                     printf("%d,%s\n", idx, $5)
-#                 }
-#             ' "$DATA_DIR/positive/${accessions[$i]}.positive"
-#         ) \
-#         "${dis_files[@]}" \
-#         > "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv"
-#     rm "${dis_files[@]}"
-# done
+title "计算最近交叉peak距离|生成训练数据集的DNA"
+mkdir -p $DATA_DIR/train_data/DNA_data
+for ((i=0;i<${#accessions[@]};++i))
+do
+    if [ -f "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv" ]
+    then
+        continue
+    fi
+    printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
+    accession="${accessions[$i]}"
+    dis_files=()
+    for accession2 in "${accessions[@]}"
+    do
+        if [ "${accession2}" != "${accession}" ]
+        then
+            bedtools closest -d -t first \
+                -a <(
+                    awk '
+                        {
+                            printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
+                        }
+                    ' $DATA_DIR/positive/${accession}.positive
+                ) \
+                -b <(
+                    awk '
+                        {
+                            printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
+                        }
+                    ' $DATA_DIR/positive/${accession2}.positive
+                ) |
+            cut -f7 \
+                > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
+        else
+            awk '{print 0}' \
+                $DATA_DIR/positive/${accession}.positive \
+                > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
+        fi
+        dis_files+=($DATA_DIR/train_data/DNA_data/${accession}_${accession2})
+    done
+    paste -d, \
+        <(
+            awk -v idx=$i '
+                {
+                    printf("%d,%s\n", idx, $5)
+                }
+            ' "$DATA_DIR/positive/${accessions[$i]}.positive"
+        ) \
+        <(
+            paste -d: \
+                "${dis_files[@]}"
+        ) \
+        > "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv"
+    rm "${dis_files[@]}"
+done
 
 # title "生成训练数据集的蛋白"
 # mkdir -p $DATA_DIR/train_data
-# >$DATA_DIR/train_data/protein_data.csv
+# printf "Entry,sequence,secondary_structure,zinc_finger,disorder,KRAB\n" > $DATA_DIR/train_data/protein_data.csv
 # for ((i=0;i<${#accessions[@]};++i))
 # do
 #     grep -F "${accessions[$i]}" \
@@ -247,17 +250,17 @@ get_seeded_random()
     </dev/zero 2>/dev/null
 }
 
-title "生成小训练数据集"
-mkdir -p $DATA_DIR/small_train_data
-cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv
-small_line_num=3000
-> $DATA_DIR/small_train_data/DNA_data.csv
-for accession in "${accessions[@]}"
-do
-    shuf -n $small_line_num \
-        --random-source=<(get_seeded_random 63036) \
-        $DATA_DIR/train_data/DNA_data/${accession}.csv \
-        >> $DATA_DIR/small_train_data/DNA_data.csv
-done
-nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv > $DATA_DIR/small_train_data/DNA_data.csv2
-mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv
+# title "生成小训练数据集"
+# mkdir -p $DATA_DIR/small_train_data
+# cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv
+# small_line_num=3000
+# printf "rn,index,DNA,distance\n" > $DATA_DIR/small_train_data/DNA_data.csv
+# for accession in "${accessions[@]}"
+# do
+#     shuf -n $small_line_num \
+#         --random-source=<(get_seeded_random 63036) \
+#         $DATA_DIR/train_data/DNA_data/${accession}.csv \
+#         >> $DATA_DIR/small_train_data/DNA_data.csv
+# done
+# nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv > $DATA_DIR/small_train_data/DNA_data.csv2
+# mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv

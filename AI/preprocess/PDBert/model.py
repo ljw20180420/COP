@@ -13,6 +13,7 @@ from torch.backends import opt_einsum
 from einops.layers.torch import Rearrange, EinMix
 from einops import rearrange, repeat, einsum
 
+from .data_collator import DataCollator
 from ..utils import Residual
 
 
@@ -501,9 +502,11 @@ class PDBertConfig(PretrainedConfig):
         attn_dim_head: int,
         pos_weight: float,
         dropout: float,
+        protein_data: os.PathLike,
         protein_length: int,
         DNA_length: int,
         minimal_unbind_summit_distance: int,
+        select_worst_loss_ratio: float,
         **kwargs,
     ) -> None:
         """ProteinBert arguments.
@@ -523,9 +526,11 @@ class PDBertConfig(PretrainedConfig):
             attn_dim_head: Dimension of each cross attension head.
             pos_weight: Weight for positive samples (https://www.tensorflow.org/tutorials/structured_data/imbalanced_data).
             dropout: Dropout probability of classifier head.
+            protein_data: File contains proteins used for training.
             protein_length: Protein bert use pad instead of mask. So always pad protein by p to protein_length. If the protein is longer than protein length, it is sheared.
             DNA_length: As protein length.
             minimal_unbind_summit_distance: Minimal distance between summit such that the protein is considered not bind to the target peak.
+            select_worst_loss_ratio: Select this worst (maximal) loss negative samples according to this ratio. The left negative samples are selected randomly.
         """
         self.protein_num_tokens = protein_num_tokens
         self.DNA_num_tokens = DNA_num_tokens
@@ -541,9 +546,11 @@ class PDBertConfig(PretrainedConfig):
         self.attn_dim_head = attn_dim_head
         self.pos_weight = pos_weight
         self.dropout = dropout
+        self.protein_data = protein_data
         self.protein_length = protein_length
         self.DNA_length = DNA_length
         self.minimal_unbind_summit_distance = minimal_unbind_summit_distance
+        self.select_worst_loss_ratio = select_worst_loss_ratio
         super().__init__(**kwargs)
 
 
@@ -552,6 +559,13 @@ class PDBertModel(PreTrainedModel):
 
     def __init__(self, config: PDBertConfig) -> None:
         super().__init__(config)
+        self.data_collator = DataCollator(
+            protein_data=config.protein_data,
+            protein_length=config.protein_length,
+            DNA_length=config.DNA_length,
+            minimal_unbind_summit_distance=config.minimal_unbind_summit_distance,
+            select_worst_loss_ratio=config.select_worst_loss_ratio,
+        )
 
         self.protein_bert = ProteinBertModel(
             ProteinBertConfig(
@@ -606,7 +620,7 @@ class PDBertModel(PreTrainedModel):
         )
 
         self.bce_with_logits_loss = nn.BCEWithLogitsLoss(
-            reduction="sum", pos_weight=torch.tensor(config.pos_weight)
+            pos_weight=torch.tensor(config.pos_weight)
         )
 
     def forward(self, input: dict, label: Optional[dict] = None) -> dict:
@@ -632,24 +646,32 @@ class PDBertModel(PreTrainedModel):
         )
 
         if label is not None:
-            loss, loss_num = self.loss_fun(logit, label["bind"])
+            losses, loss_num = self.loss_fun(logit, label["bind"])
+            self.data_collator.minimal_losses.update(
+                {
+                    (rn, actual_index): loss.item()
+                    for rn, actual_index, loss in zip(
+                        label["rn"], label["actual_index"], losses
+                    )
+                }
+            )
             return {
                 "logit": logit,
-                "loss": loss,
+                "loss": losses.sum(),
                 "loss_num": loss_num,
             }
         return {"logit": logit}
 
     def loss_fun(self, logit: torch.Tensor, bind: torch.Tensor) -> float:
         batch_size = logit.shape[0]
-        loss = self.bce_with_logits_loss(input=logit, target=bind)
+        losses = self.bce_with_logits_loss(input=logit, target=bind)
         loss_num = batch_size
 
-        return loss, loss_num
+        return losses, loss_num
 
     def eval_output(self, examples: list[dict], batch: dict) -> pd.DataFrame:
         batch_size = len(examples)
-        result = self(input=batch["input"], label=batch["label"])
+        result = self(input=batch["input"])
         probas = F.sigmoid(result["logit"]).cpu().numpy()
         df = pd.DataFrame(
             {
