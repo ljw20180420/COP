@@ -2,6 +2,7 @@ bioconda::bioframe
 bioconda::blast
 bioconda::bedtools
 bioconda::ucsc-bedclip
+conda-forge::jsonargparse
 
 conda-forge::datasets
 conda-forge::diffusers

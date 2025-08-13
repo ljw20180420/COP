@@ -1,4 +1,3 @@
 torchtune
 torchao
 gradio
-jsonargparse[all]

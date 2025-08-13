@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from ..utils import SeqTokenizer, MyGenerator
+from common_ai.utils import SeqTokenizer, MyGenerator
 
 
 class DataCollator:
@@ -37,7 +37,7 @@ class DataCollator:
         # e: 序列终止位置
         # p: pad
         self.DNA_bert_tokenizer = SeqTokenizer("ACGTNsep")
-        self.minimal_losses = {}
+        self.recent_losses = {}
 
         self.protein_ids = []
         for protein, zinc_fn in zip(df["sequence"], df["zinc_finger"]):
@@ -98,7 +98,7 @@ class DataCollator:
                             actual_index = unbind_indices[
                                 np.array(
                                     [
-                                        self.minimal_losses.get(
+                                        self.recent_losses.get(
                                             (example["rn"], unbind_index), np.inf
                                         )
                                         for unbind_index in unbind_indices

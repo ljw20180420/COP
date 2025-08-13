@@ -6,7 +6,7 @@ import pickle
 from torch import nn
 import torch.nn.functional as F
 from transformers import PretrainedConfig, PreTrainedModel
-from typing import Optional
+from typing import Optional, Callable
 
 # torch does not import opt_einsum as backend by default. import opt_einsum manually will enable it.
 from torch.backends import opt_einsum
@@ -14,7 +14,7 @@ from einops.layers.torch import Rearrange, EinMix
 from einops import rearrange, repeat, einsum
 
 from .data_collator import DataCollator
-from ..utils import Residual
+from common_ai.utils import Residual, MyGenerator
 
 
 class ProteinBertCrossAttention(nn.Module):
@@ -507,6 +507,7 @@ class PDBertConfig(PretrainedConfig):
         DNA_length: int,
         minimal_unbind_summit_distance: int,
         select_worst_loss_ratio: float,
+        protein_bert_pretrained_weights: os.PathLike,
         **kwargs,
     ) -> None:
         """ProteinBert arguments.
@@ -531,6 +532,7 @@ class PDBertConfig(PretrainedConfig):
             DNA_length: As protein length.
             minimal_unbind_summit_distance: Minimal distance between summit such that the protein is considered not bind to the target peak.
             select_worst_loss_ratio: Select this worst (maximal) loss negative samples according to this ratio. The left negative samples are selected randomly.
+            protein_bert_pretrained_weights: Pretrained weights of protein bert mode.
         """
         self.protein_num_tokens = protein_num_tokens
         self.DNA_num_tokens = DNA_num_tokens
@@ -551,6 +553,7 @@ class PDBertConfig(PretrainedConfig):
         self.DNA_length = DNA_length
         self.minimal_unbind_summit_distance = minimal_unbind_summit_distance
         self.select_worst_loss_ratio = select_worst_loss_ratio
+        self.protein_bert_pretrained_weights = protein_bert_pretrained_weights
         super().__init__(**kwargs)
 
 
@@ -620,10 +623,12 @@ class PDBertModel(PreTrainedModel):
         )
 
         self.bce_with_logits_loss = nn.BCEWithLogitsLoss(
-            pos_weight=torch.tensor(config.pos_weight)
+            reduction=None, pos_weight=torch.tensor(config.pos_weight)
         )
 
-    def forward(self, input: dict, label: Optional[dict] = None) -> dict:
+    def forward(
+        self, input: dict, label: Optional[dict], my_generator: MyGenerator
+    ) -> dict:
         protein_id = input["protein_id"]
         DNA_id = input["DNA_id"]
 
@@ -647,7 +652,7 @@ class PDBertModel(PreTrainedModel):
 
         if label is not None:
             losses, loss_num = self.loss_fun(logit, label["bind"])
-            self.data_collator.minimal_losses.update(
+            self.data_collator.recent_losses.update(
                 {
                     (rn, actual_index): loss.item()
                     for rn, actual_index, loss in zip(
@@ -671,7 +676,7 @@ class PDBertModel(PreTrainedModel):
 
     def eval_output(self, examples: list[dict], batch: dict) -> pd.DataFrame:
         batch_size = len(examples)
-        result = self(input=batch["input"])
+        result = self(input=batch["input"], label=None, my_generator=None)
         probas = F.sigmoid(result["logit"]).cpu().numpy()
         df = pd.DataFrame(
             {
@@ -683,3 +688,21 @@ class PDBertModel(PreTrainedModel):
         )
 
         return df
+
+    def state_dict(self) -> dict:
+        return {
+            "pytorch_state_dict": super().state_dict(),
+            "recent_loss": self.data_collator.recent_losses,
+        }
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        super().load_state_dict(state_dict["pytorch_state_dict"])
+        self.data_collator.recent_losses = state_dict["recent_loss"]
+
+    def my_initialize_model(
+        self, my_train_initialize_model: Callable, initializer: Callable
+    ):
+        my_train_initialize_model(self, initializer)
+        self.protein_bert.load_pretrain_weights(
+            self.config.protein_bert_pretrained_weights
+        )

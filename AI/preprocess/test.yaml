@@ -1,0 +1,5 @@
+test:
+  # model_path:
+  target: MyBCELoss
+  batch_size: 100
+  device: cuda # cuda, cpu

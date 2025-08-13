@@ -19,3 +19,4 @@ init_args:
   DNA_length: 100
   minimal_unbind_summit_distance: 300
   select_worst_loss_ratio: 0.5
+  protein_bert_pretrained_weights: AI/preprocess/PDBert/epoch_92400_sample_23500000.pkl

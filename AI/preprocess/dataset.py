@@ -1,5 +1,6 @@
 import os
 import datasets
+from common_ai.utils import split_train_valid_test
 
 
 def get_dataset(
@@ -20,23 +21,8 @@ def get_dataset(
         path="csv",
         data_files=os.fspath(DNA_data),
     )
-    ds = train_validation_test_split(
+    ds = split_train_valid_test(
         ds=ds, validation_ratio=validation_ratio, test_ratio=test_ratio, seed=seed
     )
 
-    return ds
-
-
-def train_validation_test_split(
-    ds: datasets.Dataset, validation_ratio: float, test_ratio: float, seed: int
-) -> datasets.Dataset:
-    ds = ds["train"].train_test_split(
-        test_size=test_ratio + validation_ratio, seed=seed
-    )
-    ds2 = ds.pop("test").train_test_split(
-        test_size=test_ratio / (test_ratio + validation_ratio),
-        seed=seed,
-    )
-    ds["validation"] = ds2.pop("train")
-    ds["test"] = ds2.pop("test")
     return ds
