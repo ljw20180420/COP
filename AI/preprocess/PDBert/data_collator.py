@@ -92,20 +92,24 @@ class DataCollator:
                         or distance >= self.minimal_unbind_summit_distance
                     ]
                     if len(unbind_indices) > 0:
-                        if my_generator.np_rng.random() < 0.5:
+                        if my_generator.np_rng.random() < self.select_worst_loss_ratio:
                             actual_index = my_generator.np_rng.choice(unbind_indices)
                         else:
+                            unbind_recent_losses = np.array(
+                                [
+                                    self.recent_losses.get(
+                                        (example["rn"], unbind_index), np.inf
+                                    )
+                                    for unbind_index in unbind_indices
+                                ]
+                            )
                             actual_index = unbind_indices[
-                                np.array(
-                                    [
-                                        self.recent_losses.get(
-                                            (example["rn"], unbind_index), np.inf
-                                        )
-                                        for unbind_index in unbind_indices
-                                    ]
-                                )
-                                .argmax()
-                                .item()
+                                my_generator.np_rng.choice(
+                                    np.where(
+                                        unbind_recent_losses
+                                        == unbind_recent_losses.max()
+                                    )[0]
+                                ).item()
                             ]
                         bind = 0.0
                 if actual_index is None:

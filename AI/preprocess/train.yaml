@@ -36,6 +36,28 @@ dataset:
   seed: 63036
 
 metric:
-  - class_path: AI.preprocess.metric.MyBCELoss
+  - class_path: AI.preprocess.metric.F1Metric
     init_args:
-      pos_weight: 1.0
+      threshold: 0.5
+
+  - class_path: AI.preprocess.metric.AccuracyMetric
+    init_args:
+      threshold: 0.5
+
+  - class_path: AI.preprocess.metric.RecallMetric
+    init_args:
+      threshold: 0.5
+
+  - class_path: AI.preprocess.metric.PrecisionMetric
+    init_args:
+      threshold: 0.5
+
+  - class_path: AI.preprocess.metric.MatthewsCorrelationMetric
+    init_args:
+      threshold: 0.5
+
+  - class_path: AI.preprocess.metric.RocAucMetric
+
+  - class_path: AI.preprocess.metric.PrAucMetric
+
+  - class_path: AI.preprocess.metric.BrierScoreMetric
