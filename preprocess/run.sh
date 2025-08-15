@@ -19,17 +19,15 @@ title() {
 # ./get_mmcif_from_alphafoldDB.py \
 
 # title "计算蛋白二级结构"
-# # dssp需要libcifpp: sudo apt install libcifpp-dev
-# # dssp需要更新libcifpp的资源文件: https://github.com/PDB-REDO/dssp/issues/3
 # printf "accession,sequence,secondary_structure" >secondary_structure.csv
 # for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
 # do
 #     stem=${mmcif##*/}
 #     stem=${stem%.mmcif}
 #     printf "%s," ${stem} >> secondary_structure.csv
-#     ../dssp/build/mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
+#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
 #     printf "," >> secondary_structure.csv
-#     ../dssp/build/mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
+#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
 #     printf "\n" >> secondary_structure.csv
 # done
 
