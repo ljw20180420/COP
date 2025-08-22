@@ -1,5 +1,6 @@
 TODO
 ```list
+Use one-hot encoding for models not support categorial features.
 The complexity of cross-attention can be decreased from quadratic to linear.
 zero-shot learning
 contrastive learning
