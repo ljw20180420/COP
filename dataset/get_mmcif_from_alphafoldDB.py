@@ -25,6 +25,7 @@ def requests_until_success(method, url, **kwargs):
     return response
 
 
+os.makedirs("get_mmcif_from_alphafoldDB", exist_ok=True)
 df = pd.read_table(
     "uniprot_mouse_C2H2_protein.tsv", header=0, usecols=["Entry"], na_filter=False
 )
