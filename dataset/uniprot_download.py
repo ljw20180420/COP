@@ -14,7 +14,7 @@ import sys
 #     field2:value2 \
 #     field3:value3 \
 #     ... \
-#     3> output_file
+#     fieldN:valueN
 
 # Use /uniprotkb/stream instead of /uniprotkb/search. stream endpoint support up to 10 million entries.
 url = (
@@ -40,6 +40,7 @@ url = (
             "ft_region",  # Region
             "protein_families",  # Protein families
             "ft_motif",  # Motif
+            "sequence",  # Sequence
         ]
     )
 )
