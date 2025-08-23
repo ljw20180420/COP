@@ -18,21 +18,21 @@ title() {
 # title "下载蛋白结构"
 # ./get_mmcif_from_alphafoldDB.py
 
-title "计算蛋白二级结构"
-printf "accession,sequence,secondary_structure\n" >secondary_structure.csv
-for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
-do
-    stem=${mmcif##*/}
-    stem=${stem%.mmcif}
-    printf "%s," ${stem} >> secondary_structure.csv
-    mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
-    printf "," >> secondary_structure.csv
-    mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
-    printf "\n" >> secondary_structure.csv
-done
+# title "计算蛋白二级结构"
+# printf "accession,sequence,secondary_structure\n" >secondary_structure.csv
+# for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
+# do
+#     stem=${mmcif##*/}
+#     stem=${stem%.mmcif}
+#     printf "%s," ${stem} >> secondary_structure.csv
+#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
+#     printf "," >> secondary_structure.csv
+#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
+#     printf "\n" >> secondary_structure.csv
+# done
 
-# title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
-# ./parse_ft.py
+title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
+./parse_ft.py
 
 # title "收集所有accession"
 # accessions=()

@@ -7,12 +7,19 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 import re
 import pandas as pd
-import numpy as np
 
 df = pd.read_table(
     "uniprot_mouse_C2H2_protein.tsv",
     header=0,
-    usecols=["Entry", "Reviewed", "Entry Name", "Zinc finger", "Domain [CC]", "Region"],
+    usecols=[
+        "Entry",
+        "Reviewed",
+        "Entry Name",
+        "Zinc finger",
+        "Domain [CC]",
+        "Region",
+        "Sequence",
+    ],
     na_filter=False,
 )
 
@@ -25,6 +32,18 @@ df = (
     )
     .drop(columns="accession")
     .fillna("")
+)
+
+# This is valid because pandas will align index.
+df.loc[df["sequence"] == "", "sequence"] = df["Sequence"]
+df = df.drop(columns="Sequence")
+df["secondary_structure"] = df.apply(
+    lambda x: (
+        len(x["sequence"]) * "-"
+        if x["secondary_structure"] == ""
+        else x["secondary_structure"]
+    ),
+    axis=1,
 )
 
 
