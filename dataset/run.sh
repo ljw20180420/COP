@@ -31,21 +31,28 @@ title() {
 #     printf "\n" >> secondary_structure.csv
 # done
 
-title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
-./parse_ft.py
+# title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
+# ./parse_ft.py
 
-# title "收集所有accession"
-# accessions=()
-# for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
+title "收集所有accession"
+accessions=()
+for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
+do
+    accession=$(basename ${narrowPeak%%.*})
+    accessions+=($accession)
+done
+
+# title "清洗sorted.narrowPeak"
+# for accession in "${accessions[@]}"
 # do
-#     accession=$(basename ${narrowPeak%%.*})
-#     # 如果accession蛋白没有二级结构
-#     if ! grep -F $accession protein.csv > /dev/null
-#     then
-#         printf "%s没有二级结构, 不处理\n" $accession >&2
-#         continue
-#     fi
-#     accessions+=($accession)
+#     printf "clean sorted narrowPeak for %s\n" $accession
+#     awk '
+#         NF == 10 {
+#             print
+#         }
+#     ' $DATA_DIR/sorted/$accession.sorted.narrowPeak \
+#     > $DATA_DIR/sorted/$accession.sorted.narrowPeak2
+#     mv $DATA_DIR/sorted/$accession.sorted.narrowPeak2 $DATA_DIR/sorted/$accession.sorted.narrowPeak
 # done
 
 # title "把黑名单的peak去掉|把peak聚类"
@@ -58,12 +65,12 @@ title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
 #         continue
 #     fi
 #     printf "calculate peak cluster for %s\n" $accession
-#     bedtools intersect --sorted -v \
+#     bedtools intersect -sorted -v \
 #         -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
 #         -b <(
-#             bedtools sort $GENOME_BLACK
+#             bedtools sort -i $GENOME_BLACK
 #         ) |
-#     bedtools cluster --sorted \
+#     bedtools cluster \
 #         -d $cluster_max_distance \
 #         > $DATA_DIR/clustered/$accession.clustered.narrowPeak
 # done
@@ -190,7 +197,7 @@ title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
 #     do
 #         if [ "${accession2}" != "${accession}" ]
 #         then
-#             bedtools closest --sorted -d -t first \
+#             bedtools closest -sorted -d -t first \
 #                 -a <(
 #                     awk '
 #                         {
