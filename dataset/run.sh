@@ -16,39 +16,37 @@ title() {
 #     'organism_name:"Mus musculus"'
 
 # title "下载蛋白结构"
-# ./get_mmcif_from_alphafoldDB.py \
+# ./get_mmcif_from_alphafoldDB.py
 
-# title "计算蛋白二级结构"
-# printf "accession,sequence,secondary_structure" >secondary_structure.csv
-# for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
-# do
-#     stem=${mmcif##*/}
-#     stem=${stem%.mmcif}
-#     printf "%s," ${stem} >> secondary_structure.csv
-#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
-#     printf "," >> secondary_structure.csv
-#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
-#     printf "\n" >> secondary_structure.csv
-# done
+title "计算蛋白二级结构"
+printf "accession,sequence,secondary_structure\n" >secondary_structure.csv
+for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
+do
+    stem=${mmcif##*/}
+    stem=${stem%.mmcif}
+    printf "%s," ${stem} >> secondary_structure.csv
+    mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
+    printf "," >> secondary_structure.csv
+    mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
+    printf "\n" >> secondary_structure.csv
+done
 
-# title "融合蛋白和二级结构, 标注zinc finger, KRAB, disorder"
-# # 去掉uniprot和alphafoldDB蛋白长度不相同的蛋白
-# # 在原来9种二级结构（包括没有结构）的基础上，标注KRAB和锌指蛋白结构
+# title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
 # ./parse_ft.py
 
-title "收集所有accession"
-accessions=()
-for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
-do
-    accession=$(basename ${narrowPeak%%.*})
-    # 如果accession蛋白没有二级结构
-    if ! grep -F $accession protein.csv > /dev/null
-    then
-        printf "%s没有二级结构, 不处理\n" $accession >&2
-        continue
-    fi
-    accessions+=($accession)
-done
+# title "收集所有accession"
+# accessions=()
+# for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
+# do
+#     accession=$(basename ${narrowPeak%%.*})
+#     # 如果accession蛋白没有二级结构
+#     if ! grep -F $accession protein.csv > /dev/null
+#     then
+#         printf "%s没有二级结构, 不处理\n" $accession >&2
+#         continue
+#     fi
+#     accessions+=($accession)
+# done
 
 # title "把黑名单的peak去掉|把peak聚类"
 # mkdir -p $DATA_DIR/clustered
@@ -60,10 +58,12 @@ done
 #         continue
 #     fi
 #     printf "calculate peak cluster for %s\n" $accession
-#     bedtools intersect -v \
+#     bedtools intersect --sorted -v \
 #         -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
-#         -b $GENOME_BLACK |
-#     bedtools cluster \
+#         -b <(
+#             bedtools sort $GENOME_BLACK
+#         ) |
+#     bedtools cluster --sorted \
 #         -d $cluster_max_distance \
 #         > $DATA_DIR/clustered/$accession.clustered.narrowPeak
 # done
@@ -175,60 +175,60 @@ done
 #         > $DATA_DIR/positive/$accession.positive
 # done
 
-title "计算最近交叉peak距离|生成训练数据集的DNA"
-mkdir -p $DATA_DIR/train_data/DNA_data
-for ((i=0;i<${#accessions[@]};++i))
-do
-    if [ -f "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv" ]
-    then
-        continue
-    fi
-    printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
-    accession="${accessions[$i]}"
-    dis_files=()
-    for accession2 in "${accessions[@]}"
-    do
-        if [ "${accession2}" != "${accession}" ]
-        then
-            bedtools closest -d -t first \
-                -a <(
-                    awk '
-                        {
-                            printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
-                        }
-                    ' $DATA_DIR/positive/${accession}.positive
-                ) \
-                -b <(
-                    awk '
-                        {
-                            printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
-                        }
-                    ' $DATA_DIR/positive/${accession2}.positive
-                ) |
-            cut -f7 \
-                > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
-        else
-            awk '{print 0}' \
-                $DATA_DIR/positive/${accession}.positive \
-                > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
-        fi
-        dis_files+=($DATA_DIR/train_data/DNA_data/${accession}_${accession2})
-    done
-    paste -d, \
-        <(
-            awk -v idx=$i '
-                {
-                    printf("%d,%s\n", idx, $5)
-                }
-            ' "$DATA_DIR/positive/${accessions[$i]}.positive"
-        ) \
-        <(
-            paste -d: \
-                "${dis_files[@]}"
-        ) \
-        > "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv"
-    rm "${dis_files[@]}"
-done
+# title "计算最近交叉peak距离|生成训练数据集的DNA"
+# mkdir -p $DATA_DIR/train_data/DNA_data
+# for ((i=0;i<${#accessions[@]};++i))
+# do
+#     if [ -f "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv" ]
+#     then
+#         continue
+#     fi
+#     printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
+#     accession="${accessions[$i]}"
+#     dis_files=()
+#     for accession2 in "${accessions[@]}"
+#     do
+#         if [ "${accession2}" != "${accession}" ]
+#         then
+#             bedtools closest --sorted -d -t first \
+#                 -a <(
+#                     awk '
+#                         {
+#                             printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
+#                         }
+#                     ' $DATA_DIR/positive/${accession}.positive
+#                 ) \
+#                 -b <(
+#                     awk '
+#                         {
+#                             printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
+#                         }
+#                     ' $DATA_DIR/positive/${accession2}.positive
+#                 ) |
+#             cut -f7 \
+#                 > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
+#         else
+#             awk '{print 0}' \
+#                 $DATA_DIR/positive/${accession}.positive \
+#                 > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
+#         fi
+#         dis_files+=($DATA_DIR/train_data/DNA_data/${accession}_${accession2})
+#     done
+#     paste -d, \
+#         <(
+#             awk -v idx=$i '
+#                 {
+#                     printf("%d,%s\n", idx, $5)
+#                 }
+#             ' "$DATA_DIR/positive/${accessions[$i]}.positive"
+#         ) \
+#         <(
+#             paste -d: \
+#                 "${dis_files[@]}"
+#         ) \
+#         > "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv"
+#     rm "${dis_files[@]}"
+# done
 
 # title "生成训练数据集的蛋白"
 # mkdir -p $DATA_DIR/train_data
