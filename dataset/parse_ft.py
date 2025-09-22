@@ -52,7 +52,7 @@ def parse_intervals(reg: str, literals: pd.Series):
     for literal in literals:
         intervals = ""
         for mat in reg.finditer(literal):
-            intervals += mat.group(1) + ":" + mat.group(2) + ":"
+            intervals += str(int(mat.group(1)) - 1) + ":" + mat.group(2) + ":"
         intervalss.append(intervals.rstrip(":"))
     return intervalss
 

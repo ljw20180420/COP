@@ -10,7 +10,6 @@ from common_ai.test import MyTest
 # change directory to the current script
 os.chdir(pathlib.Path(__file__).parent)
 
-breakpoint()
 # parse arguments
 parser, train_parser, test_parser = get_config()
 cfg = parser.parse_args()

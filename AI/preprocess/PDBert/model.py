@@ -69,6 +69,7 @@ class PDBertModel(nn.Module):
         super().__init__()
         self.protein_bert_pretrained_weights = protein_bert_pretrained_weights
 
+        breakpoint()
         self.data_collator = DataCollator(
             protein_data=protein_data,
             protein_length=protein_length,

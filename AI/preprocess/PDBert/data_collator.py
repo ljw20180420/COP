@@ -18,7 +18,7 @@ class DataCollator:
         select_worst_loss_ratio: float,
     ):
         df = pd.read_csv(
-            file_path=os.fspath(protein_data),
+            os.fspath(protein_data),
             header=0,
             na_filter=False,
         )
