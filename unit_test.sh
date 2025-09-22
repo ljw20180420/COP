@@ -24,7 +24,8 @@ do
 
         # Test
         model_path=${output_dir}/${preprocess}/${model_type}/${data_name}/unit_test
-        for target in F1Metric \
+        for target in \
+            F1Metric \
             AccuracyMetric \
             RecallMetric \
             PrecisionMetric \

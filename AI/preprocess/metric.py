@@ -7,7 +7,12 @@ from sklearn.metrics import average_precision_score
 
 
 class F1Metric:
-    def __init__(self, threshold):
+    def __init__(self, threshold: float):
+        """F1Metric arguments.
+
+        Args:
+            threshold: predicted probability larger than threshold is considered as positive.
+        """
         self.threshold = threshold
         self.f1 = evaluate.load("AI/preprocess/metrics/f1.py")
         self.probas = []
@@ -28,7 +33,12 @@ class F1Metric:
 
 
 class AccuracyMetric:
-    def __init__(self, threshold):
+    def __init__(self, threshold: float):
+        """AccuracyMetric arguments.
+
+        Args:
+            threshold: predicted probability larger than threshold is considered as positive.
+        """
         self.threshold = threshold
         self.accuracy = evaluate.load("AI/preprocess/metrics/accuracy.py")
         self.probas = []
@@ -49,7 +59,12 @@ class AccuracyMetric:
 
 
 class RecallMetric:
-    def __init__(self, threshold):
+    def __init__(self, threshold: float):
+        """RecallMetric arguments.
+
+        Args:
+            threshold: predicted probability larger than threshold is considered as positive.
+        """
         self.threshold = threshold
         self.recall = evaluate.load("AI/preprocess/metrics/recall.py")
         self.probas = []
@@ -70,7 +85,12 @@ class RecallMetric:
 
 
 class PrecisionMetric:
-    def __init__(self, threshold):
+    def __init__(self, threshold: float):
+        """PrecisionMetric arguments.
+
+        Args:
+            threshold: predicted probability larger than threshold is considered as positive.
+        """
         self.threshold = threshold
         self.precision = evaluate.load("AI/preprocess/metrics/precision.py")
         self.probas = []
@@ -91,7 +111,12 @@ class PrecisionMetric:
 
 
 class MatthewsCorrelationMetric:
-    def __init__(self, threshold):
+    def __init__(self, threshold: float):
+        """MatthewsCorrelationMetric arguments.
+
+        Args:
+            threshold: predicted probability larger than threshold is considered as positive.
+        """
         self.threshold = threshold
         self.matthews_correlation = evaluate.load(
             "AI/preprocess/metrics/matthews_correlation.py"
