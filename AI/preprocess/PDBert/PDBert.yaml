@@ -14,7 +14,7 @@ init_args:
   attn_dim_head: 64
   pos_weight: 1.0
   dropout: 0.1
-  protein_data: /home/ljw/sdc1/data/small_train_data/protein_data.csv
+  protein_data: dataset/protein_data.csv
   protein_length: 1000
   DNA_length: 100
   minimal_unbind_summit_distance: 300

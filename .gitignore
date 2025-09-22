@@ -1,5 +1,4 @@
 **/__pycache__
-.conda
 database/logs
 .vscode
 nextflow/pipelines
@@ -15,6 +14,7 @@ tmp_b_c.txt
 dataset/protein.csv
 dataset/secondary_structure.csv
 dataset/uniprot_mouse_C2H2_protein.tsv
+dataset/protein_data.csv
 dataset/know_motif/jaspar/JASPAR2024_*
 dataset/know_motif/hocomoco/H13CORE_meme_format.meme
 dataset/know_motif/hocomoco/tf_masterlist.tsv

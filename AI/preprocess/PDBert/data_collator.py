@@ -7,6 +7,8 @@ from common_ai.generator import MyGenerator
 
 
 class DataCollator:
+    preprocess = "PDBert"
+
     def __init__(
         self,
         protein_data: os.PathLike,

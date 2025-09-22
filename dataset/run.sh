@@ -183,10 +183,10 @@ done
 # done
 
 # title "计算最近交叉peak距离|生成训练数据集的DNA"
-# mkdir -p $DATA_DIR/train_data/DNA_data
+# mkdir -p $DATA_DIR/train_data
 # for ((i=0;i<${#accessions[@]};++i))
 # do
-#     if [ -f "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv" ]
+#     if [ -f "$DATA_DIR/train_data/${accessions[$i]}.csv" ]
 #     then
 #         continue
 #     fi
@@ -213,13 +213,13 @@ done
 #                     ' $DATA_DIR/positive/${accession2}.positive
 #                 ) |
 #             cut -f7 \
-#                 > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
+#                 > $DATA_DIR/train_data/${accession}_${accession2}
 #         else
 #             awk '{print 0}' \
 #                 $DATA_DIR/positive/${accession}.positive \
-#                 > $DATA_DIR/train_data/DNA_data/${accession}_${accession2}
+#                 > $DATA_DIR/train_data/${accession}_${accession2}
 #         fi
-#         dis_files+=($DATA_DIR/train_data/DNA_data/${accession}_${accession2})
+#         dis_files+=($DATA_DIR/train_data/${accession}_${accession2})
 #     done
 #     paste -d, \
 #         <(
@@ -233,19 +233,18 @@ done
 #             paste -d: \
 #                 "${dis_files[@]}"
 #         ) \
-#         > "$DATA_DIR/train_data/DNA_data/${accessions[$i]}.csv"
+#         > "$DATA_DIR/train_data/${accessions[$i]}.csv"
 #     rm "${dis_files[@]}"
 # done
 
 # title "生成训练数据集的蛋白"
-# mkdir -p $DATA_DIR/train_data
-# printf "Entry,sequence,secondary_structure,zinc_finger,disorder,KRAB\n" > $DATA_DIR/train_data/protein_data.csv
+# printf "Entry,sequence,secondary_structure,zinc_finger,disorder,KRAB\n" > protein_data.csv
 # for ((i=0;i<${#accessions[@]};++i))
 # do
 #     grep -F "${accessions[$i]}" \
 #         protein.csv |
 #     cut -d, -f1,4-8 \
-#         >> $DATA_DIR/train_data/protein_data.csv
+#         >> protein_data.csv
 # done
 
 get_seeded_random()
@@ -255,17 +254,16 @@ get_seeded_random()
     </dev/zero 2>/dev/null
 }
 
-title "生成小训练数据集"
-mkdir -p $DATA_DIR/small_train_data
-cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv
-small_line_num=3000
-> $DATA_DIR/small_train_data/DNA_data.csv
-for accession in "${accessions[@]}"
-do
-    shuf -n $small_line_num \
-        --random-source=<(get_seeded_random 63036) \
-        $DATA_DIR/train_data/DNA_data/${accession}.csv \
-        >> $DATA_DIR/small_train_data/DNA_data.csv
-done
-nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv | sed '1i rn,index,DNA,distance' > $DATA_DIR/small_train_data/DNA_data.csv2
-mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv
+# title "生成小训练数据集"
+# mkdir -p $DATA_DIR/small_train_data
+# small_line_num=3000
+# > $DATA_DIR/small_train_data/DNA_data.csv
+# for accession in "${accessions[@]}"
+# do
+#     shuf -n $small_line_num \
+#         --random-source=<(get_seeded_random 63036) \
+#         $DATA_DIR/train_data/DNA_data/${accession}.csv \
+#         >> $DATA_DIR/small_train_data/DNA_data.csv
+# done
+# nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv | sed '1i rn,index,DNA,distance' > $DATA_DIR/small_train_data/DNA_data.csv2
+# mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv
