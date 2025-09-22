@@ -1,4 +1,4 @@
-class_path: AI.preprocess.PDBert.model.PDBertConfig
+class_path: AI.preprocess.PDBert.model.PDBertModel
 init_args:
   protein_num_tokens: 26
   DNA_num_tokens: 8

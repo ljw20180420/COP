@@ -39,12 +39,6 @@ early_stopping:
   patience: null
   delta: 0.0
 
-dataset:
-  DNA_data: /home/ljw/sdc1/data/small_train_data/DNA_data.csv
-  test_ratio: 0.05
-  validation_ratio: 0.05
-  seed: 63036
-
 metric:
   - class_path: AI.preprocess.metric.F1Metric
     init_args:
