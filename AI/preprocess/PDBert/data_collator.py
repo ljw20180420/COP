@@ -2,7 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-from common_ai.utils import SeqTokenizer, MyGenerator
+from common_ai.utils import SeqTokenizer
+from common_ai.generator import MyGenerator
 
 
 class DataCollator:
@@ -67,22 +68,22 @@ class DataCollator:
         if output_label:
             rns, actual_indices, binds = [], [], []
         for example in examples:
-            assert len(example["DNA"]) >= self.DNA_length, "Input DNA is too short"
             if len(example["DNA"]) >= self.DNA_length:
                 DNA_start = (len(example["DNA"]) - self.DNA_length) // 2
-                DNA = (
+                DNA_fix = (
                     "s" + example["DNA"][DNA_start : DNA_start + self.DNA_length] + "e"
                 )
             else:
-                DNA = (
+                DNA_fix = (
                     "s"
                     + example["DNA"]
                     + "e"
                     + (self.DNA_length - len(example["DNA"])) * "p"
                 )
-            DNA_ids.append(self.DNA_bert_tokenizer(DNA))
+            DNA_ids.append(self.DNA_bert_tokenizer(DNA_fix))
 
             if "protein" not in example:
+                # For training, protein is not given.
                 actual_index = None
                 if my_generator.np_rng.random() < 0.5:
                     unbind_indices = [
@@ -117,6 +118,7 @@ class DataCollator:
                     bind = 1.0
                 protein_ids.append(self.protein_ids[actual_index])
             else:
+                # For evaluation, the protein is given.
                 if len(example["protein"]) > self.protein_length:
                     protein_start = (len(example["protein"]) - self.protein_length) // 2
                     protein_fix = (

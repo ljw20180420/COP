@@ -259,7 +259,7 @@ title "生成小训练数据集"
 mkdir -p $DATA_DIR/small_train_data
 cp $DATA_DIR/train_data/protein_data.csv $DATA_DIR/small_train_data/protein_data.csv
 small_line_num=3000
-printf "rn,index,DNA,distance\n" > $DATA_DIR/small_train_data/DNA_data.csv
+> $DATA_DIR/small_train_data/DNA_data.csv
 for accession in "${accessions[@]}"
 do
     shuf -n $small_line_num \
@@ -267,5 +267,5 @@ do
         $DATA_DIR/train_data/DNA_data/${accession}.csv \
         >> $DATA_DIR/small_train_data/DNA_data.csv
 done
-nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv > $DATA_DIR/small_train_data/DNA_data.csv2
+nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv | sed '1i rn,index,DNA,distance' > $DATA_DIR/small_train_data/DNA_data.csv2
 mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv

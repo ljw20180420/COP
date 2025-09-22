@@ -4,19 +4,19 @@ import pandas as pd
 import torch
 from torch import nn
 import torch.nn.functional as F
-from transformers import PretrainedConfig, PreTrainedModel
 from typing import Optional, Callable
 
 # torch does not import opt_einsum as backend by default. import opt_einsum manually will enable it.
 from torch.backends import opt_einsum
 from einops.layers.torch import Rearrange
 
-from common_ai.utils import MyGenerator
+from common_ai.generator import MyGenerator
+from common_ai.initializer import MyInitializer
 from common_ai.protein_bert import ProteinBert, ProteinBertLayerCross
 from .data_collator import DataCollator
 
 
-class PDBertConfig(PretrainedConfig):
+class PDBertModel(nn.Module):
     model_type = "PDBert"
 
     def __init__(
@@ -41,7 +41,6 @@ class PDBertConfig(PretrainedConfig):
         minimal_unbind_summit_distance: int,
         select_worst_loss_ratio: float,
         protein_bert_pretrained_weights: os.PathLike,
-        **kwargs,
     ) -> None:
         """ProteinBert arguments.
 
@@ -67,92 +66,67 @@ class PDBertConfig(PretrainedConfig):
             select_worst_loss_ratio: Select this worst (maximal) loss negative samples according to this ratio. The left negative samples are selected randomly.
             protein_bert_pretrained_weights: Pretrained weights of protein bert mode.
         """
-        self.protein_num_tokens = protein_num_tokens
-        self.DNA_num_tokens = DNA_num_tokens
-        self.dim_token = dim_token
-        self.dim_global = dim_global
-        self.protein_depth = protein_depth
-        self.DNA_depth = DNA_depth
-        self.cross_depth = cross_depth
-        self.narrow_conv_kernel = narrow_conv_kernel
-        self.wide_conv_kernel = wide_conv_kernel
-        self.wide_conv_dilation = wide_conv_dilation
-        self.attn_heads = attn_heads
-        self.attn_dim_head = attn_dim_head
-        self.pos_weight = pos_weight
-        self.dropout = dropout
-        self.protein_data = protein_data
-        self.protein_length = protein_length
-        self.DNA_length = DNA_length
-        self.minimal_unbind_summit_distance = minimal_unbind_summit_distance
-        self.select_worst_loss_ratio = select_worst_loss_ratio
+        super().__init__()
         self.protein_bert_pretrained_weights = protein_bert_pretrained_weights
-        super().__init__(**kwargs)
 
-
-class PDBertModel(PreTrainedModel):
-    config_class = PDBertConfig
-
-    def __init__(self, config: PDBertConfig) -> None:
-        super().__init__(config)
         self.data_collator = DataCollator(
-            protein_data=config.protein_data,
-            protein_length=config.protein_length,
-            DNA_length=config.DNA_length,
-            minimal_unbind_summit_distance=config.minimal_unbind_summit_distance,
-            select_worst_loss_ratio=config.select_worst_loss_ratio,
+            protein_data=protein_data,
+            protein_length=protein_length,
+            DNA_length=DNA_length,
+            minimal_unbind_summit_distance=minimal_unbind_summit_distance,
+            select_worst_loss_ratio=select_worst_loss_ratio,
         )
 
         self.protein_bert = ProteinBert(
-            num_tokens=config.protein_num_tokens,
-            dim_token=config.dim_token,
-            dim_global=config.dim_global,
-            depth=config.protein_depth,
-            narrow_conv_kernel=config.narrow_conv_kernel,
-            wide_conv_kernel=config.wide_conv_kernel,
-            wide_conv_dilation=config.wide_conv_dilation,
-            attn_heads=config.attn_heads,
-            attn_dim_head=config.attn_dim_head,
+            num_tokens=protein_num_tokens,
+            dim_token=dim_token,
+            dim_global=dim_global,
+            depth=protein_depth,
+            narrow_conv_kernel=narrow_conv_kernel,
+            wide_conv_kernel=wide_conv_kernel,
+            wide_conv_dilation=wide_conv_dilation,
+            attn_heads=attn_heads,
+            attn_dim_head=attn_dim_head,
         )
 
         self.DNA_bert = ProteinBert(
-            num_tokens=config.DNA_num_tokens,
-            dim_token=config.dim_token,
-            dim_global=config.dim_global,
-            depth=config.DNA_depth,
-            narrow_conv_kernel=config.narrow_conv_kernel,
-            wide_conv_kernel=config.wide_conv_kernel,
-            wide_conv_dilation=config.wide_conv_dilation,
-            attn_heads=config.attn_heads,
-            attn_dim_head=config.attn_dim_head,
+            num_tokens=DNA_num_tokens,
+            dim_token=dim_token,
+            dim_global=dim_global,
+            depth=DNA_depth,
+            narrow_conv_kernel=narrow_conv_kernel,
+            wide_conv_kernel=wide_conv_kernel,
+            wide_conv_dilation=wide_conv_dilation,
+            attn_heads=attn_heads,
+            attn_dim_head=attn_dim_head,
         )
 
         self.layer_crosses = nn.ModuleList(
             [
                 ProteinBertLayerCross(
-                    dim_token=config.dim_token,
-                    dim_global=config.dim_global,
-                    narrow_conv_kernel=config.narrow_conv_kernel,
-                    wide_conv_dilation=config.wide_conv_dilation,
-                    wide_conv_kernel=config.wide_conv_kernel,
-                    attn_heads=config.attn_heads,
-                    attn_dim_head=config.attn_dim_head,
+                    dim_token=dim_token,
+                    dim_global=dim_global,
+                    narrow_conv_kernel=narrow_conv_kernel,
+                    wide_conv_dilation=wide_conv_dilation,
+                    wide_conv_kernel=wide_conv_kernel,
+                    attn_heads=attn_heads,
+                    attn_dim_head=attn_dim_head,
                 )
-                for _ in range(config.cross_depth)
+                for _ in range(cross_depth)
             ]
         )
 
         # huggingface的分类头
         self.classifier = nn.Sequential(
-            nn.Linear(2 * config.dim_global, config.dim_global),
+            nn.Linear(2 * dim_global, dim_global),
             nn.GELU(),
-            nn.Dropout(config.dropout),
-            nn.Linear(config.dim_global, 1),
+            nn.Dropout(dropout),
+            nn.Linear(dim_global, 1),
             Rearrange("b () () -> b"),
         )
 
         self.bce_with_logits_loss = nn.BCEWithLogitsLoss(
-            reduction=None, pos_weight=torch.tensor(config.pos_weight)
+            reduction=None, pos_weight=torch.tensor(pos_weight)
         )
 
     def forward(
@@ -203,6 +177,12 @@ class PDBertModel(PreTrainedModel):
 
         return losses, loss_num
 
+    def my_initialize_model(
+        self, my_initializer: MyInitializer, my_generator: MyGenerator
+    ):
+        my_initializer(self, my_generator)
+        self.protein_bert.load_pretrain_weights(self.protein_bert_pretrained_weights)
+
     def eval_output(self, examples: list[dict], batch: dict) -> pd.DataFrame:
         batch_size = len(examples)
         result = self(input=batch["input"], label=None, my_generator=None)
@@ -227,11 +207,3 @@ class PDBertModel(PreTrainedModel):
     def load_state_dict(self, state_dict: dict) -> None:
         super().load_state_dict(state_dict["pytorch_state_dict"])
         self.data_collator.recent_losses = state_dict["recent_loss"]
-
-    def my_initialize_model(
-        self, my_train_initialize_model: Callable, initializer: Callable
-    ):
-        my_train_initialize_model(self, initializer)
-        self.protein_bert.load_pretrain_weights(
-            self.config.protein_bert_pretrained_weights
-        )

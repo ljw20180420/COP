@@ -1,7 +1,16 @@
 import jsonargparse
 from .dataset import get_dataset
-from .metric import MyBCELoss
-from .PDBert.model import PDBertConfig
+from .PDBert.model import PDBertModel
+from .metric import (
+    F1Metric,
+    AccuracyMetric,
+    RecallMetric,
+    PrecisionMetric,
+    MatthewsCorrelationMetric,
+    RocAucMetric,
+    PrAucMetric,
+    BrierScoreMetric,
+)
 from common_ai import config
 
 
@@ -16,13 +25,20 @@ def get_config() -> tuple[jsonargparse.ArgumentParser]:
     train_parser.add_argument(
         "--metric",
         nargs="+",
-        type=MyBCELoss,
+        type=F1Metric
+        | AccuracyMetric
+        | RecallMetric
+        | PrecisionMetric
+        | MatthewsCorrelationMetric
+        | RocAucMetric
+        | PrAucMetric
+        | BrierScoreMetric,
         required=True,
         enable_path=True,
     )
 
     train_parser.add_subclass_arguments(
-        baseclass=(PDBertConfig,),
+        baseclass=(PDBertModel,),
         nested_key="model",
     )
 
