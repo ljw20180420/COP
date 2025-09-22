@@ -10,7 +10,8 @@ train:
   evaluation_only: false
 
 dataset:
-  # DNA_data:
+  # data_file:
+  # name:
   test_ratio: 0.05
   validation_ratio: 0.05
   seed: 63036
