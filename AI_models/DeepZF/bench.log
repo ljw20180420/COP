@@ -1,0 +1,2 @@
+DeepZF
+{'f1': 0.620557842560699, 'accuracy': 0.5143548387096775, 'recall': 0.7942473118279569, 'precision': 0.5092030883772232, 'matthews_correlation': 0.03464683003987124, 'true_negative': np.int64(4361), 'false_positive': np.int64(14239), 'false_negative': np.int64(3827), 'true_positive': np.int64(14773)}

@@ -92,7 +92,7 @@ class DataCollator:
                         index
                         for index, distance in enumerate(example["distance"].split(":"))
                         if int(distance) == -1
-                        or distance >= self.minimal_unbind_summit_distance
+                        or int(distance) >= self.minimal_unbind_summit_distance
                     ]
                     if len(unbind_indices) > 0:
                         if my_generator.np_rng.random() < self.select_worst_loss_ratio:

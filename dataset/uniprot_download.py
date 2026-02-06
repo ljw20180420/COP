@@ -5,8 +5,9 @@ import os
 # 把运行文件夹切换为脚本文件夹
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-import requests
 import sys
+
+import requests
 
 # available fields are at https://www.uniprot.org/help/return_fields
 # path/to/uniprot_download.py \

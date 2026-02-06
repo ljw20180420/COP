@@ -7,7 +7,7 @@
 # datasets download genome taxon 'mus musculus' --filename $SRA_CACHE/mouse_dataset.zip
 
 # 用accession编号下载，保证每次下载的一样。
-until datasets download genome accession GCF_000001635.27 --include genome,gtf --filename $SRA_CACHE/mouse_dataset.zip
+until datasets download genome accession GCF_000001635.27 --include genome,gtf,gff3 --filename $SRA_CACHE/mouse_dataset.zip
 do
     datasets download genome accession GCF_000001635.27 --include genome,gtf,gff3 --filename $SRA_CACHE/mouse_dataset.zip
 done

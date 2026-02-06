@@ -56,5 +56,8 @@ metric:
     init_args:
       threshold: 0.5
   - class_path: AI.preprocess.metric.RocAucMetric
+    init_args: {}
   - class_path: AI.preprocess.metric.PrAucMetric
+    init_args: {}
   - class_path: AI.preprocess.metric.BrierScoreMetric
+    init_args: {}

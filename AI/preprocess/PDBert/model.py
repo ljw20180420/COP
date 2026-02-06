@@ -69,7 +69,6 @@ class PDBertModel(nn.Module):
         super().__init__()
         self.protein_bert_pretrained_weights = protein_bert_pretrained_weights
 
-        breakpoint()
         self.data_collator = DataCollator(
             protein_data=protein_data,
             protein_length=protein_length,
@@ -131,11 +130,12 @@ class PDBertModel(nn.Module):
         )
 
     def forward(
-        self, input: dict, label: Optional[dict], my_generator: MyGenerator
+        self, input: dict, label: Optional[dict], my_generator: Optional[MyGenerator]
     ) -> dict:
-        protein_id = input["protein_id"]
-        DNA_id = input["DNA_id"]
+        protein_id = input["protein_id"].to(self.device)
+        DNA_id = input["DNA_id"].to(self.device)
 
+        breakpoint()
         protein_tokens, protein_annotation = self.protein_bert(protein_id)
         DNA_tokens, DNA_annotation = self.DNA_bert(DNA_id)
         for layer_cross in self.layer_crosses:
@@ -180,7 +180,7 @@ class PDBertModel(nn.Module):
 
     def my_initialize_model(
         self, my_initializer: MyInitializer, my_generator: MyGenerator
-    ):
+    ) -> None:
         my_initializer(self, my_generator)
         self.protein_bert.load_pretrain_weights(self.protein_bert_pretrained_weights)
 
