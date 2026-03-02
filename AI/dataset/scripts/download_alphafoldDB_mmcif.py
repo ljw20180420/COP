@@ -27,7 +27,7 @@ def requests_until_success(method, url, **kwargs):
 
 os.makedirs("alphafoldDB_mmcif", exist_ok=True)
 df = pd.read_table(
-    "uniprot_mouse_C2H2_protein.tsv", header=0, usecols=["Entry"], na_filter=False
+    "uniprot_C2H2_protein_table.tsv", header=0, usecols=["Entry"], na_filter=False
 )
 for accession in df["Entry"]:
     if os.path.exists(f"alphafoldDB_mmcif/{accession}.pdb"):

@@ -11,9 +11,9 @@ tmp_b_c.txt
 /AI/dataset/mm9.2bit
 /AI/dataset/mm9.fa
 /AI/dataset/alphafoldDB_mmcif
-/AI/dataset/protein.csv
+/AI/dataset/protein_feature.csv
 /AI/dataset/secondary_structure.csv
-/AI/dataset/uniprot_mouse_C2H2_protein.tsv
+/AI/dataset/uniprot_C2H2_protein_table.tsv
 /AI/dataset/protein_with_peak_data.csv
 AI_models/bind_transformer/checkpoints
 AI_models/bind_transformer/pipeline

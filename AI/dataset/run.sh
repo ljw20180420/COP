@@ -279,7 +279,7 @@ get_protein_with_peak_data() {
     for ((i=0;i<${#accessions[@]};++i))
     do
         grep -F "${accessions[$i]}" \
-            protein.csv |
+            protein_feature.csv |
         cut -d, -f1,4-8 \
             >> protein_with_peak_data.csv
     done

@@ -46,5 +46,5 @@ url = (
     )
 )
 
-with open("uniprot_mouse_C2H2_protein.tsv", "w") as fd:
+with open("uniprot_C2H2_protein_table.tsv", "w") as fd:
     fd.write(requests.get(url).text)

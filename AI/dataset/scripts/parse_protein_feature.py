@@ -9,7 +9,7 @@ import re
 import pandas as pd
 
 df = pd.read_table(
-    "uniprot_mouse_C2H2_protein.tsv",
+    "uniprot_C2H2_protein_table.tsv",
     header=0,
     usecols=[
         "Entry",
@@ -67,4 +67,4 @@ df["KRAB"] = parse_intervals(
     re.compile(r'DOMAIN (\d+)\.\.(\d+); /note="KRAB"'), df.pop("Domain [CC]")
 )
 
-df.to_csv("protein.csv", header=True, index=False)
+df.to_csv("protein_feature.csv", header=True, index=False)
