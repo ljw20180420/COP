@@ -26,85 +26,113 @@ download_uniprot_C2H2_protein_table() {
         'organism_name:"Mus musculus"'
 }
 
+download_alphafoldDB_mmcif() {
+    title "download alphafoldDB mmcif"
+    ./download_alphafoldDB_mmcif.py
+}
+
+infer_secondary_structure() {
+    title "infer secondary structure"
+    printf "accession,sequence,secondary_structure\n" >secondary_structure.csv
+    for mmcif in $(find alphafoldDB_mmcif/ -name "*.mmcif")
+    do
+        stem=${mmcif##*/}
+        stem=${stem%.mmcif}
+        printf "%s," ${stem} >> secondary_structure.csv
+        mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
+        printf "," >> secondary_structure.csv
+        mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
+        printf "\n" >> secondary_structure.csv
+    done
+}
+
+parse_protein_feature() {
+    title "parse protein feature"
+    ./parse_protein_feature.py
+}
+
+collect_accession() {
+    title "collect accession"
+    accessions=()
+    for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
+    do
+        accession=$(basename ${narrowPeak%%.*})
+        accessions+=($accession)
+    done
+}
+
+clean_sorted_peak() {
+    title "clean sorted peak"
+    for accession in "${accessions[@]}"
+    do
+        printf "clean sorted narrowPeak for %s\n" $accession
+        awk '
+            NF == 10 {
+                print
+            }
+        ' $DATA_DIR/sorted/$accession.sorted.narrowPeak \
+        > $DATA_DIR/sorted/$accession.sorted.narrowPeak2
+        mv $DATA_DIR/sorted/$accession.sorted.narrowPeak2 $DATA_DIR/sorted/$accession.sorted.narrowPeak
+    done
+}
+
+remove_black_peak_and_cluster_peak() {
+    title "remove black peak and cluster peak"
+    mkdir -p $DATA_DIR/clustered
+    cluster_max_distance="-50"
+    for accession in "${accessions[@]}"
+    do
+        if [ -f "$DATA_DIR/clustered/$accession.clustered.narrowPeak" ]
+        then
+            continue
+        fi
+        printf "calculate peak cluster for %s\n" $accession
+        bedtools intersect -sorted -v \
+            -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
+            -b <(
+                bedtools sort -i mm9-blacklist.bed
+            ) |
+        bedtools cluster \
+            -d $cluster_max_distance \
+            > $DATA_DIR/clustered/$accession.clustered.narrowPeak
+    done
+}
+
+choose_peak_by_pvalue_quantile_from_cluster() {
+    title "choose peak by pvalue quantile from cluster"
+    mkdir -p $DATA_DIR/selected
+    cluster_quantile=0.9
+    for accession in "${accessions[@]}"
+    do
+        if [ -f "$DATA_DIR/selected/$accession.selected.narrowPeak" ]
+        then
+            continue
+        fi
+        printf "select peak for %s\n" $accession
+        ./choose_peak_by_pvalue_quantile_from_cluster.py \
+            < $DATA_DIR/clustered/$accession.clustered.narrowPeak \
+            $cluster_quantile \
+            > $DATA_DIR/selected/$accession.selected.narrowPeak
+    done
+}
+
 # download_mm9
 
 # download_uniprot_C2H2_protein_table
 
-# title "下载蛋白结构"
-# ./get_mmcif_from_alphafoldDB.py
+# download_alphafoldDB_mmcif
 
-# title "计算蛋白二级结构"
-# printf "accession,sequence,secondary_structure\n" >secondary_structure.csv
-# for mmcif in $(find get_mmcif_from_alphafoldDB/ -name "*.mmcif")
-# do
-#     stem=${mmcif##*/}
-#     stem=${stem%.mmcif}
-#     printf "%s," ${stem} >> secondary_structure.csv
-#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c14 | tr -d '\n' >> secondary_structure.csv
-#     printf "," >> secondary_structure.csv
-#     mkdssp --output-format dssp $mmcif | sed '1,/^  #/d' | cut  -c17 | tr -d '\n' | tr ' ' '-' >> secondary_structure.csv
-#     printf "\n" >> secondary_structure.csv
-# done
+# infer_secondary_structure
 
-# title "融合蛋白和二级结构,标注zinc-finger,KRAB,disorder"
-# ./parse_ft.py
+# parse_protein_feature
 
-title "收集所有accession"
-accessions=()
-for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
-do
-    accession=$(basename ${narrowPeak%%.*})
-    accessions+=($accession)
-done
+collect_accession
 
-# title "清洗sorted.narrowPeak"
-# for accession in "${accessions[@]}"
-# do
-#     printf "clean sorted narrowPeak for %s\n" $accession
-#     awk '
-#         NF == 10 {
-#             print
-#         }
-#     ' $DATA_DIR/sorted/$accession.sorted.narrowPeak \
-#     > $DATA_DIR/sorted/$accession.sorted.narrowPeak2
-#     mv $DATA_DIR/sorted/$accession.sorted.narrowPeak2 $DATA_DIR/sorted/$accession.sorted.narrowPeak
-# done
+# clean_sorted_peak
 
-# title "把黑名单的peak去掉|把peak聚类"
-# mkdir -p $DATA_DIR/clustered
-# cluster_max_distance="-50"
-# for accession in "${accessions[@]}"
-# do
-#     if [ -f "$DATA_DIR/clustered/$accession.clustered.narrowPeak" ]
-#     then
-#         continue
-#     fi
-#     printf "calculate peak cluster for %s\n" $accession
-#     bedtools intersect -sorted -v \
-#         -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
-#         -b <(
-#             bedtools sort -i mm9-blacklist.bed
-#         ) |
-#     bedtools cluster \
-#         -d $cluster_max_distance \
-#         > $DATA_DIR/clustered/$accession.clustered.narrowPeak
-# done
+# remove_black_peak_and_cluster_peak
 
-# title "每个聚类选择好的分位数|不选择最大值|防止异常值"
-# mkdir -p $DATA_DIR/selected
-# cluster_quantile=0.9
-# for accession in "${accessions[@]}"
-# do
-#     if [ -f "$DATA_DIR/selected/$accession.selected.narrowPeak" ]
-#     then
-#         continue
-#     fi
-#     printf "select peak for %s\n" $accession
-#     ./peak_cluster_select.py \
-#         < $DATA_DIR/clustered/$accession.clustered.narrowPeak \
-#         $cluster_quantile \
-#         > $DATA_DIR/selected/$accession.selected.narrowPeak
-# done
+# choose_peak_by_pvalue_quantile_from_cluster
 
 # title "去掉太宽太窄的峰|去掉太显著太不显著的峰"
 # mkdir -p $DATA_DIR/filtered

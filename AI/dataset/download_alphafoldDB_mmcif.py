@@ -25,12 +25,12 @@ def requests_until_success(method, url, **kwargs):
     return response
 
 
-os.makedirs("get_mmcif_from_alphafoldDB", exist_ok=True)
+os.makedirs("alphafoldDB_mmcif", exist_ok=True)
 df = pd.read_table(
     "uniprot_mouse_C2H2_protein.tsv", header=0, usecols=["Entry"], na_filter=False
 )
 for accession in df["Entry"]:
-    if os.path.exists(f"get_mmcif_from_alphafoldDB/{accession}.pdb"):
+    if os.path.exists(f"alphafoldDB_mmcif/{accession}.pdb"):
         continue
     sys.stderr.write(f"download mmcif for {accession}\n")
     response = requests_until_success(
@@ -41,8 +41,8 @@ for accession in df["Entry"]:
         sys.stderr.write(f"cannot find mmcif for {accession}\n")
         continue
     response = requests_until_success("GET", model_list[0]["cifUrl"])
-    with open(f"get_mmcif_from_alphafoldDB/{accession}.mmcif", "wb") as fd:
+    with open(f"alphafoldDB_mmcif/{accession}.mmcif", "wb") as fd:
         fd.write(response.content)
     response = requests_until_success("GET", model_list[0]["pdbUrl"])
-    with open(f"get_mmcif_from_alphafoldDB/{accession}.pdb", "wb") as fd:
+    with open(f"alphafoldDB_mmcif/{accession}.pdb", "wb") as fd:
         fd.write(response.content)
