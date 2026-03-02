@@ -294,18 +294,17 @@ get_seeded_random()
 
 generate_small_train_data() {
     title "generate small train data"
-    mkdir -p $DATA_DIR/small_train_data
     small_line_num=3000
-    > $DATA_DIR/small_train_data/DNA_data.csv
+    > small_DNA_data.csv
     for accession in "${accessions[@]}"
     do
         shuf -n $small_line_num \
             --random-source=<(get_seeded_random 63036) \
             $DATA_DIR/train_data/DNA_data/${accession}.csv \
-            >> $DATA_DIR/small_train_data/DNA_data.csv
+            >> small_DNA_data.csv
     done
-    nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv | sed '1i rn,index,DNA,distance' > $DATA_DIR/small_train_data/DNA_data.csv2
-    mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv
+    nl -w1 -v0 -s, small_DNA_data.csv | sed '1i rn,index,DNA,distance' > small_DNA_data.csv2
+    mv small_DNA_data.csv2 small_DNA_data.csv
 }
 
 # download_mm9
