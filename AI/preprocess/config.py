@@ -1,6 +1,7 @@
 import jsonargparse
 from common_ai import config
 
+from ..dataset import get_dataset
 from ..metric import (
     AccuracyMetric,
     BrierScoreMetric,
@@ -11,7 +12,6 @@ from ..metric import (
     RecallMetric,
     RocAucMetric,
 )
-from .dataset import get_dataset
 from .PDBert.model import PDBertModel
 
 

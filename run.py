@@ -2,10 +2,12 @@
 
 import os
 import pathlib
-from AI.preprocess.config import get_config
-from AI.preprocess.dataset import get_dataset
-from common_ai.train import MyTrain
+
 from common_ai.test import MyTest
+from common_ai.train import MyTrain
+
+from AI.dataset import get_dataset
+from AI.preprocess.config import get_config
 
 # change directory to the current script
 os.chdir(pathlib.Path(__file__).parent)
