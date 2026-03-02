@@ -1,0 +1,38 @@
+train:
+  # output_dir:
+  # trial_name:
+  batch_size: 100
+  num_epochs: 33
+  last_epoch: -1
+  clip_value: 1.0
+  accumulate_steps: 1
+  device: cuda # cuda, cpu
+  evaluation_only: false
+
+logger: component/logger.yaml
+
+generator: component/generator.yaml
+
+initializer: component/initializer.yaml
+
+optimizer: component/optimizer.yaml
+
+lr_scheduler: component/lr_scheduler.yaml
+
+early_stopping: component/early_stopping.yaml
+
+profiler: component/profiler.yaml
+
+dataset: dataset/dataset.yaml
+
+metric:
+  - metric/F1Metric.yaml
+  - metric/AccuracyMetric.yaml
+  - metric/RecallMetric.yaml
+  - metric/PrecisionMetric.yaml
+  - metric/MatthewsCorrelationMetric.yaml
+  - metric/RocAucMetric.yaml
+  - metric/PrAucMetric.yaml
+  - metric/BrierScoreMetric.yaml
+
+# model:
