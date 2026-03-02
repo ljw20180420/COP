@@ -1,6 +1,0 @@
-bioconda::bedtools
-bioconda::ucsc-bedclip
-bioconda::macs3
-bioconda::seqkit
-conda-forge::ncbi-datasets-cli
-bioconda::sra-tools

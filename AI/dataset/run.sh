@@ -7,8 +7,14 @@ cd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 set -euo pipefail
 
 title() {
-    printf "\n----------\n%s\n----------\n" $1 >&2
+    printf "\n----------\n%s\n----------\n" "$1" >&2
 }
+
+title "Download mm9"
+# wget https://github.com/Boyle-Lab/Blacklist/raw/refs/heads/master/lists/Blacklist_v1/mm9-blacklist.bed.gz
+# gzip -d mm9-blacklist.bed.gz
+# wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.chrom.sizes
+wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.2bit
 
 # title "下载蛋白文件"
 # ./uniprot_download.py \

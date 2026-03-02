@@ -1,0 +1,26 @@
+name: COP
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconda::bedtools
+  - bioconda::ucsc-bedclip
+  - bioconda::ucsc-twobittofa
+  - bioconda::seqkit
+  - pip
+  - pip:
+    - scikit-learn
+    - xgboost
+    - lightgbm
+    - jsonargparse
+    - opt_einsum
+    - einops
+    - optuna
+    - optuna-dashboard
+    - tensorboard
+    - transformers
+    - diffusers
+    - evaluate
+    - torchtune
+    - gradio
