@@ -10,16 +10,25 @@ title() {
     printf "\n----------\n%s\n----------\n" "$1" >&2
 }
 
-title "Download mm9"
-# wget https://github.com/Boyle-Lab/Blacklist/raw/refs/heads/master/lists/Blacklist_v1/mm9-blacklist.bed.gz
-# gzip -d mm9-blacklist.bed.gz
-# wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.chrom.sizes
-wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.2bit
+download_mm9() {
+    title "download mm9"
+    wget https://github.com/Boyle-Lab/Blacklist/raw/refs/heads/master/lists/Blacklist_v1/mm9-blacklist.bed.gz
+    gzip -d mm9-blacklist.bed.gz
+    wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.chrom.sizes
+    wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.2bit
+    twoBitToFa mm9.2bit mm9.fa
+}
 
-# title "下载蛋白文件"
-# ./uniprot_download.py \
-#     'ft_zn_fing:C2H2' \
-#     'organism_name:"Mus musculus"'
+download_uniprot_C2H2_protein_table() {
+    title "download uniprot C2H2 protein table"
+    ./download_uniprot_C2H2_protein_table.py \
+        'ft_zn_fing:C2H2' \
+        'organism_name:"Mus musculus"'
+}
+
+# download_mm9
+
+# download_uniprot_C2H2_protein_table
 
 # title "下载蛋白结构"
 # ./get_mmcif_from_alphafoldDB.py
@@ -74,7 +83,7 @@ done
 #     bedtools intersect -sorted -v \
 #         -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
 #         -b <(
-#             bedtools sort -i $GENOME_BLACK
+#             bedtools sort -i mm9-blacklist.bed
 #         ) |
 #     bedtools cluster \
 #         -d $cluster_max_distance \
@@ -160,7 +169,7 @@ done
 #             ' $DATA_DIR/filtered/$accession.filtered.narrowPeak |
 #             sort -k1,1 -k4,4n
 #         ) \
-#         $GENOME_SIZE \
+#         mm9.chrom.sizes \
 #         $DATA_DIR/sized/$accession.sized.narrowPeak
 # done
 
@@ -178,7 +187,7 @@ done
 #         $DATA_DIR/sized/$accession.sized.narrowPeak \
 #         <(
 #             seqkit subseq \
-#                 < $GENOME \
+#                 < mm9.fa \
 #                 --update-faidx \
 #                 --line-width 0 \
 #                 --bed $DATA_DIR/sized/$accession.sized.narrowPeak |
