@@ -14,7 +14,7 @@ tmp_b_c.txt
 /AI/dataset/protein.csv
 /AI/dataset/secondary_structure.csv
 /AI/dataset/uniprot_mouse_C2H2_protein.tsv
-/AI/dataset/protein_data.csv
+/AI/dataset/protein_with_peak_data.csv
 AI_models/bind_transformer/checkpoints
 AI_models/bind_transformer/pipeline
 AI_models/DeepZF/Data

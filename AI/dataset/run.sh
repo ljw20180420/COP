@@ -119,6 +119,195 @@ choose_peak_by_pvalue_quantile_from_cluster() {
     done
 }
 
+filter_peak_by_width_and_pvalue() {
+    title "filter peak by width and pvalue"
+    mkdir -p $DATA_DIR/filtered
+    for accession in "${accessions[@]}"
+    do
+        if [ -f "$DATA_DIR/filtered/$accession.filtered.narrowPeak" ]
+        then
+            continue
+        fi
+        printf "filtered peak for %s\n" $accession
+        wlb=$(
+            awk '{print $3 - $2}' \
+                < $DATA_DIR/selected/$accession.selected.narrowPeak |
+            sort -n |
+            perl -e '$d=0.1;@l=<>;print $l[int($d*$#l)]'
+        )
+        wub=$(
+            awk '{print $3 - $2}' \
+                < $DATA_DIR/selected/$accession.selected.narrowPeak |
+            sort -n |
+            perl -e '$d=0.9;@l=<>;print $l[int($d*$#l)]'
+        )
+        plb=$(
+            awk '{print $8}' \
+                < $DATA_DIR/selected/$accession.selected.narrowPeak |
+            sort -g |
+            perl -e '$d=0.1;@l=<>;print $l[int($d*$#l)]'
+        )
+        pub=$(
+            awk '{print $8}' \
+                < $DATA_DIR/selected/$accession.selected.narrowPeak |
+            sort -g |
+            perl -e '$d=0.9;@l=<>;print $l[int($d*$#l)]'
+        )
+        awk -v wlb=$wlb -v wub=$wub -v plb=$plb -v pub=$pub '$3 - $2 <= wub && $3 - $2 >= wlb && $8 >= plb && $8 <= pub {print}' \
+            < $DATA_DIR/selected/$accession.selected.narrowPeak \
+            > $DATA_DIR/filtered/$accession.filtered.narrowPeak
+    done
+}
+
+resize_peak_and_sort_by_summit() {
+    title "resize peak and sort by summit"
+    mkdir -p $DATA_DIR/sized
+    seq_len=256
+    for accession in "${accessions[@]}"
+    do
+        if [ -f "$DATA_DIR/sized/$accession.sized.narrowPeak" ]
+        then
+            continue
+        fi
+        printf "resize peak for %s\n" $accession
+        bedClip \
+            <(
+                awk -v seq_len=$seq_len '
+                    {
+                        start = $2
+                        end = $3
+                        summit = $10
+                        new_start = start + summit - int(seq_len / (end - start) * summit)
+                        new_end = new_start + seq_len
+                        new_summit = start + simmit
+                        printf("%s\t%d\t%d\t%d\n", $1, new_start, new_end, new_summit)
+                    }
+                ' $DATA_DIR/filtered/$accession.filtered.narrowPeak |
+                sort -k1,1 -k4,4n
+            ) \
+            genome/mm9.chrom.sizes \
+            $DATA_DIR/sized/$accession.sized.narrowPeak
+    done
+}
+
+extract_peak_site_sequence() {
+    title "extract peak site sequence"
+    mkdir -p $DATA_DIR/positive
+    for accession in "${accessions[@]}"
+    do
+        if [ -f "$DATA_DIR/positive/$accession.positive" ]
+        then
+            continue
+        fi
+        printf "extract peak sequence for %s\n" $accession
+        # --line-width 0 防止fasta换行
+        paste \
+            $DATA_DIR/sized/$accession.sized.narrowPeak \
+            <(
+                seqkit subseq \
+                    < genome/mm9.fa \
+                    --update-faidx \
+                    --line-width 0 \
+                    --bed $DATA_DIR/sized/$accession.sized.narrowPeak |
+                sed -nr '2~2{y/acgtn/ACGTN/; p}'
+            ) |
+        grep -vE "\sN|[ACGT]N" \
+            > $DATA_DIR/positive/$accession.positive
+    done
+}
+
+get_protein_pairwise_closest_peak_distance() {
+    title "get protein pairwise closest peak distance"
+    mkdir -p $DATA_DIR/train_data
+    for ((i=0;i<${#accessions[@]};++i))
+    do
+        if [ -f "$DATA_DIR/train_data/${accessions[$i]}.csv" ]
+        then
+            continue
+        fi
+        printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
+        accession="${accessions[$i]}"
+        dis_files=()
+        for accession2 in "${accessions[@]}"
+        do
+            if [ "${accession2}" != "${accession}" ]
+            then
+                bedtools closest -sorted -d -t first \
+                    -a <(
+                        awk '
+                            {
+                                printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
+                            }
+                        ' $DATA_DIR/positive/${accession}.positive
+                    ) \
+                    -b <(
+                        awk '
+                            {
+                                printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
+                            }
+                        ' $DATA_DIR/positive/${accession2}.positive
+                    ) |
+                cut -f7 \
+                    > $DATA_DIR/train_data/${accession}_${accession2}
+            else
+                awk '{print 0}' \
+                    $DATA_DIR/positive/${accession}.positive \
+                    > $DATA_DIR/train_data/${accession}_${accession2}
+            fi
+            dis_files+=($DATA_DIR/train_data/${accession}_${accession2})
+        done
+        paste -d, \
+            <(
+                awk -v idx=$i '
+                    {
+                        printf("%d,%s\n", idx, $5)
+                    }
+                ' "$DATA_DIR/positive/${accessions[$i]}.positive"
+            ) \
+            <(
+                paste -d: \
+                    "${dis_files[@]}"
+            ) \
+            > "$DATA_DIR/train_data/${accessions[$i]}.csv"
+        rm "${dis_files[@]}"
+    done
+}
+
+get_protein_with_peak_data() {
+    title "get protein with peak data"
+    printf "Entry,sequence,secondary_structure,zinc_finger,disorder,KRAB\n" > protein_with_peak_data.csv
+    for ((i=0;i<${#accessions[@]};++i))
+    do
+        grep -F "${accessions[$i]}" \
+            protein.csv |
+        cut -d, -f1,4-8 \
+            >> protein_with_peak_data.csv
+    done
+}
+
+get_seeded_random()
+{
+    seed="$1"
+    openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+    </dev/zero 2>/dev/null
+}
+
+generate_small_train_data() {
+    title "generate small train data"
+    mkdir -p $DATA_DIR/small_train_data
+    small_line_num=3000
+    > $DATA_DIR/small_train_data/DNA_data.csv
+    for accession in "${accessions[@]}"
+    do
+        shuf -n $small_line_num \
+            --random-source=<(get_seeded_random 63036) \
+            $DATA_DIR/train_data/DNA_data/${accession}.csv \
+            >> $DATA_DIR/small_train_data/DNA_data.csv
+    done
+    nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv | sed '1i rn,index,DNA,distance' > $DATA_DIR/small_train_data/DNA_data.csv2
+    mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv
+}
+
 # download_mm9
 
 # download_uniprot_C2H2_protein_table
@@ -137,179 +326,14 @@ collect_accession
 
 # choose_peak_by_pvalue_quantile_from_cluster
 
-# title "去掉太宽太窄的峰|去掉太显著太不显著的峰"
-# mkdir -p $DATA_DIR/filtered
-# for accession in "${accessions[@]}"
-# do
-#     if [ -f "$DATA_DIR/filtered/$accession.filtered.narrowPeak" ]
-#     then
-#         continue
-#     fi
-#     printf "filtered peak for %s\n" $accession
-#     wlb=$(
-#         awk '{print $3 - $2}' \
-#             < $DATA_DIR/selected/$accession.selected.narrowPeak |
-#         sort -n |
-#         perl -e '$d=0.1;@l=<>;print $l[int($d*$#l)]'
-#     )
-#     wub=$(
-#         awk '{print $3 - $2}' \
-#             < $DATA_DIR/selected/$accession.selected.narrowPeak |
-#         sort -n |
-#         perl -e '$d=0.9;@l=<>;print $l[int($d*$#l)]'
-#     )
-#     plb=$(
-#         awk '{print $8}' \
-#             < $DATA_DIR/selected/$accession.selected.narrowPeak |
-#         sort -g |
-#         perl -e '$d=0.1;@l=<>;print $l[int($d*$#l)]'
-#     )
-#     pub=$(
-#         awk '{print $8}' \
-#             < $DATA_DIR/selected/$accession.selected.narrowPeak |
-#         sort -g |
-#         perl -e '$d=0.9;@l=<>;print $l[int($d*$#l)]'
-#     )
-#     awk -v wlb=$wlb -v wub=$wub -v plb=$plb -v pub=$pub '$3 - $2 <= wub && $3 - $2 >= wlb && $8 >= plb && $8 <= pub {print}' \
-#         < $DATA_DIR/selected/$accession.selected.narrowPeak \
-#         > $DATA_DIR/filtered/$accession.filtered.narrowPeak
-# done
+# filter_peak_by_width_and_pvalue
 
-# title "调整peak大小|按照summit位置排序"
-# mkdir -p $DATA_DIR/sized
-# seq_len=256
-# for accession in "${accessions[@]}"
-# do
-#     if [ -f "$DATA_DIR/sized/$accession.sized.narrowPeak" ]
-#     then
-#         continue
-#     fi
-#     printf "resize peak for %s\n" $accession
-#     bedClip \
-#         <(
-#             awk -v seq_len=$seq_len '
-#                 {
-#                     start = $2
-#                     end = $3
-#                     summit = $10
-#                     new_start = start + summit - int(seq_len / (end - start) * summit)
-#                     new_end = new_start + seq_len
-#                     new_summit = start + simmit
-#                     printf("%s\t%d\t%d\t%d\n", $1, new_start, new_end, new_summit)
-#                 }
-#             ' $DATA_DIR/filtered/$accession.filtered.narrowPeak |
-#             sort -k1,1 -k4,4n
-#         ) \
-#         genome/mm9.chrom.sizes \
-#         $DATA_DIR/sized/$accession.sized.narrowPeak
-# done
+# resize_peak_and_sort_by_summit
 
-# title "提取结合位点序列"
-# mkdir -p $DATA_DIR/positive
-# for accession in "${accessions[@]}"
-# do
-#     if [ -f "$DATA_DIR/positive/$accession.positive" ]
-#     then
-#         continue
-#     fi
-#     printf "extract peak sequence for %s\n" $accession
-#     # --line-width 0 防止fasta换行
-#     paste \
-#         $DATA_DIR/sized/$accession.sized.narrowPeak \
-#         <(
-#             seqkit subseq \
-#                 < genome/mm9.fa \
-#                 --update-faidx \
-#                 --line-width 0 \
-#                 --bed $DATA_DIR/sized/$accession.sized.narrowPeak |
-#             sed -nr '2~2{y/acgtn/ACGTN/; p}'
-#         ) |
-#     grep -vE "\sN|[ACGT]N" \
-#         > $DATA_DIR/positive/$accession.positive
-# done
+# extract_peak_site_sequence
 
-# title "计算最近交叉peak距离|生成训练数据集的DNA"
-# mkdir -p $DATA_DIR/train_data
-# for ((i=0;i<${#accessions[@]};++i))
-# do
-#     if [ -f "$DATA_DIR/train_data/${accessions[$i]}.csv" ]
-#     then
-#         continue
-#     fi
-#     printf "calculate the closest peak from other proteins for %s\n" ${accessions[$i]}
-#     accession="${accessions[$i]}"
-#     dis_files=()
-#     for accession2 in "${accessions[@]}"
-#     do
-#         if [ "${accession2}" != "${accession}" ]
-#         then
-#             bedtools closest -sorted -d -t first \
-#                 -a <(
-#                     awk '
-#                         {
-#                             printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
-#                         }
-#                     ' $DATA_DIR/positive/${accession}.positive
-#                 ) \
-#                 -b <(
-#                     awk '
-#                         {
-#                             printf("%s\t%s\t%s\n", $1, $4, $4 + 1)
-#                         }
-#                     ' $DATA_DIR/positive/${accession2}.positive
-#                 ) |
-#             cut -f7 \
-#                 > $DATA_DIR/train_data/${accession}_${accession2}
-#         else
-#             awk '{print 0}' \
-#                 $DATA_DIR/positive/${accession}.positive \
-#                 > $DATA_DIR/train_data/${accession}_${accession2}
-#         fi
-#         dis_files+=($DATA_DIR/train_data/${accession}_${accession2})
-#     done
-#     paste -d, \
-#         <(
-#             awk -v idx=$i '
-#                 {
-#                     printf("%d,%s\n", idx, $5)
-#                 }
-#             ' "$DATA_DIR/positive/${accessions[$i]}.positive"
-#         ) \
-#         <(
-#             paste -d: \
-#                 "${dis_files[@]}"
-#         ) \
-#         > "$DATA_DIR/train_data/${accessions[$i]}.csv"
-#     rm "${dis_files[@]}"
-# done
+# get_protein_pairwise_closest_peak_distance
 
-# title "生成训练数据集的蛋白"
-# printf "Entry,sequence,secondary_structure,zinc_finger,disorder,KRAB\n" > protein_data.csv
-# for ((i=0;i<${#accessions[@]};++i))
-# do
-#     grep -F "${accessions[$i]}" \
-#         protein.csv |
-#     cut -d, -f1,4-8 \
-#         >> protein_data.csv
-# done
+# get_protein_with_peak_data
 
-get_seeded_random()
-{
-    seed="$1"
-    openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
-    </dev/zero 2>/dev/null
-}
-
-# title "生成小训练数据集"
-# mkdir -p $DATA_DIR/small_train_data
-# small_line_num=3000
-# > $DATA_DIR/small_train_data/DNA_data.csv
-# for accession in "${accessions[@]}"
-# do
-#     shuf -n $small_line_num \
-#         --random-source=<(get_seeded_random 63036) \
-#         $DATA_DIR/train_data/DNA_data/${accession}.csv \
-#         >> $DATA_DIR/small_train_data/DNA_data.csv
-# done
-# nl -w1 -v0 -s, $DATA_DIR/small_train_data/DNA_data.csv | sed '1i rn,index,DNA,distance' > $DATA_DIR/small_train_data/DNA_data.csv2
-# mv $DATA_DIR/small_train_data/DNA_data.csv2 $DATA_DIR/small_train_data/DNA_data.csv
+# generate_small_train_data
