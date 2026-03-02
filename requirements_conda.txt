@@ -1,9 +1,6 @@
 bioconda::bedtools
 bioconda::ucsc-bedclip
 bioconda::macs3
-bioconda::nextflow
-bioconda::nf-core
 bioconda::seqkit
-bioconda::entrez-direct
 conda-forge::ncbi-datasets-cli
 bioconda::sra-tools

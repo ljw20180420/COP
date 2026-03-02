@@ -1,5 +1,4 @@
 **/__pycache__
-database/logs
 .vscode
 nextflow/pipelines
 nextflow/runs/**/results
@@ -7,8 +6,6 @@ nextflow/runs/**/logs
 nextflow/runs/**/work
 nextflow/runs/**/.nextflow
 tmp_b_c.txt
-**/c2h2_motifs
-**.dbs
 /AI/dataset/get_mmcif_from_alphafoldDB
 /AI/dataset/protein.csv
 /AI/dataset/secondary_structure.csv
