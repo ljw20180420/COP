@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
-import pandas as pd
-import numpy as np
+import pathlib
+
 import evaluate
+import numpy as np
+import pandas as pd
+from common_ai.metric import MyMetricAbstract
 from sklearn.metrics import average_precision_score
 
 
-class F1Metric:
+class F1Metric(MyMetricAbstract):
     def __init__(self, threshold: float):
         """F1Metric arguments.
 
@@ -14,7 +17,11 @@ class F1Metric:
             threshold: predicted probability larger than threshold is considered as positive.
         """
         self.threshold = threshold
-        self.f1 = evaluate.load("AI/preprocess/metrics/f1.py")
+        self.f1 = evaluate.load(
+            (
+                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "f1.py"
+            ).as_posix()
+        )
         self.probas = []
         self.binds = []
 
@@ -32,7 +39,7 @@ class F1Metric:
         return results["f1"]
 
 
-class AccuracyMetric:
+class AccuracyMetric(MyMetricAbstract):
     def __init__(self, threshold: float):
         """AccuracyMetric arguments.
 
@@ -40,7 +47,11 @@ class AccuracyMetric:
             threshold: predicted probability larger than threshold is considered as positive.
         """
         self.threshold = threshold
-        self.accuracy = evaluate.load("AI/preprocess/metrics/accuracy.py")
+        self.accuracy = evaluate.load(
+            (
+                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "accuracy.py"
+            ).as_posix()
+        )
         self.probas = []
         self.binds = []
 
@@ -58,7 +69,7 @@ class AccuracyMetric:
         return results["accuracy"]
 
 
-class RecallMetric:
+class RecallMetric(MyMetricAbstract):
     def __init__(self, threshold: float):
         """RecallMetric arguments.
 
@@ -66,7 +77,11 @@ class RecallMetric:
             threshold: predicted probability larger than threshold is considered as positive.
         """
         self.threshold = threshold
-        self.recall = evaluate.load("AI/preprocess/metrics/recall.py")
+        self.recall = evaluate.load(
+            (
+                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "recall.py"
+            ).as_posix()
+        )
         self.probas = []
         self.binds = []
 
@@ -84,7 +99,7 @@ class RecallMetric:
         return results["recall"]
 
 
-class PrecisionMetric:
+class PrecisionMetric(MyMetricAbstract):
     def __init__(self, threshold: float):
         """PrecisionMetric arguments.
 
@@ -92,7 +107,11 @@ class PrecisionMetric:
             threshold: predicted probability larger than threshold is considered as positive.
         """
         self.threshold = threshold
-        self.precision = evaluate.load("AI/preprocess/metrics/precision.py")
+        self.precision = evaluate.load(
+            (
+                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "precision.py"
+            ).as_posix()
+        )
         self.probas = []
         self.binds = []
 
@@ -110,7 +129,7 @@ class PrecisionMetric:
         return results["precision"]
 
 
-class MatthewsCorrelationMetric:
+class MatthewsCorrelationMetric(MyMetricAbstract):
     def __init__(self, threshold: float):
         """MatthewsCorrelationMetric arguments.
 
@@ -119,7 +138,11 @@ class MatthewsCorrelationMetric:
         """
         self.threshold = threshold
         self.matthews_correlation = evaluate.load(
-            "AI/preprocess/metrics/matthews_correlation.py"
+            (
+                pathlib.Path(__file__).resolve().parent
+                / "hf_metrics"
+                / "matthews_correlation.py"
+            ).as_posix()
         )
         self.probas = []
         self.binds = []
@@ -138,9 +161,13 @@ class MatthewsCorrelationMetric:
         return results["matthews_correlation"]
 
 
-class RocAucMetric:
+class RocAucMetric(MyMetricAbstract):
     def __init__(self):
-        self.roc_auc = evaluate.load("AI/preprocess/metrics/roc_auc.py")
+        self.roc_auc = evaluate.load(
+            (
+                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "roc_auc.py"
+            ).as_posix()
+        )
         self.probas = []
         self.binds = []
 
@@ -158,7 +185,7 @@ class RocAucMetric:
         return results["roc_auc"]
 
 
-class PrAucMetric:
+class PrAucMetric(MyMetricAbstract):
     def __init__(self):
         self.probas = []
         self.binds = []
@@ -177,9 +204,15 @@ class PrAucMetric:
         return results
 
 
-class BrierScoreMetric:
+class BrierScoreMetric(MyMetricAbstract):
     def __init__(self):
-        self.brier_score = evaluate.load("AI/preprocess/metrics/brier_score.py")
+        self.brier_score = evaluate.load(
+            (
+                pathlib.Path(__file__).resolve().parent
+                / "hf_metrics"
+                / "brier_score.py"
+            ).as_posix()
+        )
         self.probas = []
         self.binds = []
 
@@ -201,10 +234,11 @@ class BrierScoreMetric:
 if __name__ == "__main__":
     import os
     import pathlib
+
     from huggingface_hub import HfFileSystem
 
     # change directory to the current script
-    os.chdir(pathlib.Path(__file__).parent)
+    os.chdir(pathlib.Path(__file__).resolve().parent)
 
     fs = HfFileSystem()
     for metric in [
@@ -218,6 +252,6 @@ if __name__ == "__main__":
         "brier_score",
     ]:
         with fs.open(f"spaces/evaluate-metric/{metric}/{metric}.py", "rb") as rd, open(
-            f"metrics/{metric}.py", "wb"
+            f"hf_metrics/{metric}.py", "wb"
         ) as wd:
             wd.write(rd.read())

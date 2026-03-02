@@ -1,17 +1,18 @@
 import jsonargparse
+from common_ai import config
+
+from ..metric import (
+    AccuracyMetric,
+    BrierScoreMetric,
+    F1Metric,
+    MatthewsCorrelationMetric,
+    PrAucMetric,
+    PrecisionMetric,
+    RecallMetric,
+    RocAucMetric,
+)
 from .dataset import get_dataset
 from .PDBert.model import PDBertModel
-from .metric import (
-    F1Metric,
-    AccuracyMetric,
-    RecallMetric,
-    PrecisionMetric,
-    MatthewsCorrelationMetric,
-    RocAucMetric,
-    PrAucMetric,
-    BrierScoreMetric,
-)
-from common_ai import config
 
 
 def get_config() -> tuple[jsonargparse.ArgumentParser]:
