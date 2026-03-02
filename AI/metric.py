@@ -3,7 +3,9 @@
 import pathlib
 
 import evaluate
+import jsonargparse
 import numpy as np
+import optuna
 import pandas as pd
 from common_ai.metric import MyMetricAbstract
 from sklearn.metrics import average_precision_score
@@ -36,6 +38,10 @@ class F1Metric(MyMetricAbstract):
         self.binds = []
         return results["f1"]
 
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
+
 
 class AccuracyMetric(MyMetricAbstract):
     def __init__(self, threshold: float):
@@ -65,6 +71,10 @@ class AccuracyMetric(MyMetricAbstract):
         self.probas = []
         self.binds = []
         return results["accuracy"]
+
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
 
 
 class RecallMetric(MyMetricAbstract):
@@ -96,6 +106,10 @@ class RecallMetric(MyMetricAbstract):
         self.binds = []
         return results["recall"]
 
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
+
 
 class PrecisionMetric(MyMetricAbstract):
     def __init__(self, threshold: float):
@@ -125,6 +139,10 @@ class PrecisionMetric(MyMetricAbstract):
         self.probas = []
         self.binds = []
         return results["precision"]
+
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
 
 
 class MatthewsCorrelationMetric(MyMetricAbstract):
@@ -158,6 +176,10 @@ class MatthewsCorrelationMetric(MyMetricAbstract):
         self.binds = []
         return results["matthews_correlation"]
 
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
+
 
 class RocAucMetric(MyMetricAbstract):
     def __init__(self):
@@ -182,6 +204,10 @@ class RocAucMetric(MyMetricAbstract):
         self.binds = []
         return results["roc_auc"]
 
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
+
 
 class PrAucMetric(MyMetricAbstract):
     def __init__(self):
@@ -200,6 +226,10 @@ class PrAucMetric(MyMetricAbstract):
         self.probas = []
         self.binds = []
         return results
+
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
 
 
 class BrierScoreMetric(MyMetricAbstract):
@@ -224,6 +254,10 @@ class BrierScoreMetric(MyMetricAbstract):
         self.probas = []
         self.binds = []
         return results["brier_score"]
+
+    @classmethod
+    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
+        pass
 
 
 # Download all metrics from huggingface.
