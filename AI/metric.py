@@ -18,9 +18,7 @@ class F1Metric(MyMetricAbstract):
         """
         self.threshold = threshold
         self.f1 = evaluate.load(
-            (
-                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "f1.py"
-            ).as_posix()
+            (pathlib.Path(__file__).resolve().parent / "metric" / "f1.py").as_posix()
         )
         self.probas = []
         self.binds = []
@@ -49,7 +47,7 @@ class AccuracyMetric(MyMetricAbstract):
         self.threshold = threshold
         self.accuracy = evaluate.load(
             (
-                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "accuracy.py"
+                pathlib.Path(__file__).resolve().parent / "metric" / "accuracy.py"
             ).as_posix()
         )
         self.probas = []
@@ -79,7 +77,7 @@ class RecallMetric(MyMetricAbstract):
         self.threshold = threshold
         self.recall = evaluate.load(
             (
-                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "recall.py"
+                pathlib.Path(__file__).resolve().parent / "metric" / "recall.py"
             ).as_posix()
         )
         self.probas = []
@@ -109,7 +107,7 @@ class PrecisionMetric(MyMetricAbstract):
         self.threshold = threshold
         self.precision = evaluate.load(
             (
-                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "precision.py"
+                pathlib.Path(__file__).resolve().parent / "metric" / "precision.py"
             ).as_posix()
         )
         self.probas = []
@@ -140,7 +138,7 @@ class MatthewsCorrelationMetric(MyMetricAbstract):
         self.matthews_correlation = evaluate.load(
             (
                 pathlib.Path(__file__).resolve().parent
-                / "hf_metrics"
+                / "metric"
                 / "matthews_correlation.py"
             ).as_posix()
         )
@@ -165,7 +163,7 @@ class RocAucMetric(MyMetricAbstract):
     def __init__(self):
         self.roc_auc = evaluate.load(
             (
-                pathlib.Path(__file__).resolve().parent / "hf_metrics" / "roc_auc.py"
+                pathlib.Path(__file__).resolve().parent / "metric" / "roc_auc.py"
             ).as_posix()
         )
         self.probas = []
@@ -208,9 +206,7 @@ class BrierScoreMetric(MyMetricAbstract):
     def __init__(self):
         self.brier_score = evaluate.load(
             (
-                pathlib.Path(__file__).resolve().parent
-                / "hf_metrics"
-                / "brier_score.py"
+                pathlib.Path(__file__).resolve().parent / "metric" / "brier_score.py"
             ).as_posix()
         )
         self.probas = []
@@ -252,6 +248,6 @@ if __name__ == "__main__":
         "brier_score",
     ]:
         with fs.open(f"spaces/evaluate-metric/{metric}/{metric}.py", "rb") as rd, open(
-            f"hf_metrics/{metric}.py", "wb"
+            f"metric/{metric}.py", "wb"
         ) as wd:
             wd.write(rd.read())

@@ -1,0 +1,3 @@
+class_path: AI.metric.PrecisionMetric
+init_args:
+  threshold: 0.5
