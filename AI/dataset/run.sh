@@ -12,23 +12,26 @@ title() {
 
 download_mm9() {
     title "download mm9"
+    mkdir -p genome
+    pushd genome
     wget https://github.com/Boyle-Lab/Blacklist/raw/refs/heads/master/lists/Blacklist_v1/mm9-blacklist.bed.gz
     gzip -d mm9-blacklist.bed.gz
     wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.chrom.sizes
     wget https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.2bit
     twoBitToFa mm9.2bit mm9.fa
+    popd
 }
 
 download_uniprot_C2H2_protein_table() {
     title "download uniprot C2H2 protein table"
-    ./download_uniprot_C2H2_protein_table.py \
+    ./scripts/download_uniprot_C2H2_protein_table.py \
         'ft_zn_fing:C2H2' \
         'organism_name:"Mus musculus"'
 }
 
 download_alphafoldDB_mmcif() {
     title "download alphafoldDB mmcif"
-    ./download_alphafoldDB_mmcif.py
+    ./scripts/download_alphafoldDB_mmcif.py
 }
 
 infer_secondary_structure() {
@@ -48,7 +51,7 @@ infer_secondary_structure() {
 
 parse_protein_feature() {
     title "parse protein feature"
-    ./parse_protein_feature.py
+    ./scripts/parse_protein_feature.py
 }
 
 collect_accession() {
@@ -90,7 +93,7 @@ remove_black_peak_and_cluster_peak() {
         bedtools intersect -sorted -v \
             -a $DATA_DIR/sorted/$accession.sorted.narrowPeak \
             -b <(
-                bedtools sort -i mm9-blacklist.bed
+                bedtools sort -i genome/mm9-blacklist.bed
             ) |
         bedtools cluster \
             -d $cluster_max_distance \
@@ -109,7 +112,7 @@ choose_peak_by_pvalue_quantile_from_cluster() {
             continue
         fi
         printf "select peak for %s\n" $accession
-        ./choose_peak_by_pvalue_quantile_from_cluster.py \
+        ./scripts/choose_peak_by_pvalue_quantile_from_cluster.py \
             < $DATA_DIR/clustered/$accession.clustered.narrowPeak \
             $cluster_quantile \
             > $DATA_DIR/selected/$accession.selected.narrowPeak
@@ -197,7 +200,7 @@ collect_accession
 #             ' $DATA_DIR/filtered/$accession.filtered.narrowPeak |
 #             sort -k1,1 -k4,4n
 #         ) \
-#         mm9.chrom.sizes \
+#         genome/mm9.chrom.sizes \
 #         $DATA_DIR/sized/$accession.sized.narrowPeak
 # done
 
@@ -215,7 +218,7 @@ collect_accession
 #         $DATA_DIR/sized/$accession.sized.narrowPeak \
 #         <(
 #             seqkit subseq \
-#                 < mm9.fa \
+#                 < genome/mm9.fa \
 #                 --update-faidx \
 #                 --line-width 0 \
 #                 --bed $DATA_DIR/sized/$accession.sized.narrowPeak |

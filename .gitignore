@@ -6,7 +6,7 @@ nextflow/runs/**/logs
 nextflow/runs/**/work
 nextflow/runs/**/.nextflow
 tmp_b_c.txt
-/AI/dataset/mm9-blacklist.bed
+/AI/dataset/genome
 /AI/dataset/mm9.chrom.sizes
 /AI/dataset/mm9.2bit
 /AI/dataset/mm9.fa
