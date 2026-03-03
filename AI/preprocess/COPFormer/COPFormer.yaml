@@ -1,0 +1,15 @@
+class_path: AI.preprocess.COPFormer.model.COPFormer
+init_args:
+  max_num_tokens: 256
+  dim_emb: 128
+  heads: 4
+  dim_head: 64
+  depth: 6
+  dim_ffn: 256
+  dropout: 0.05
+  pos_weight: 1.0
+  reg_l1: 0.00000001
+  reg_l2: 0.00000001
+  use_hyena: false
+  hyena_order: 2
+  hyena_filter_order: 64

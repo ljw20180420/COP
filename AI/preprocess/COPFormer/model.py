@@ -19,8 +19,6 @@ from .encoder import DNAEncoder, SecondEncoder
 class COPFormer(MyModelAbstract, nn.Module):
     def __init__(
         self,
-        second_vocab: int,
-        dna_vocab: int,
         max_num_tokens: int,
         dim_emb: int,
         heads: int,
@@ -38,8 +36,6 @@ class COPFormer(MyModelAbstract, nn.Module):
         """COPFormer arguments.
 
         Args:
-            second_vocab: vocabulary size of protein secondary structure.
-            dna_vocab: vocabulary size of protein secondary sequence.
             max_num_tokens: maximally allowed tokens (residues).
             dim_emb: embedding dimension size.
             heads: number of attention heads.
@@ -59,7 +55,7 @@ class COPFormer(MyModelAbstract, nn.Module):
         self.max_num_tokens = max_num_tokens
 
         self.second_encoder = SecondEncoder(
-            second_vocab,
+            12,
             max_num_tokens,
             dim_emb,
             dim_head,
@@ -73,7 +69,7 @@ class COPFormer(MyModelAbstract, nn.Module):
         )
 
         self.dna_encoder = DNAEncoder(
-            dna_vocab,
+            7,
             max_num_tokens,
             dim_emb,
             dim_head,
