@@ -11,9 +11,9 @@ from common_ai.hta import MyHta
 from common_ai.test import MyTest
 from common_ai.train import MyTrain
 
-from AI.gradio_fn import MyGradioFn
-from AI.inference import MyInference
-from AI.shap import MyShap
+# from AI.gradio_fn import MyGradioFn
+# from AI.inference import MyInference
+# from AI.shap import MyShap
 
 # change directory to the current script
 os.chdir(pathlib.Path(__file__).parent)
