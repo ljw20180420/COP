@@ -1,14 +1,13 @@
 import os
+
 import numpy as np
 import pandas as pd
 import torch
-from common_ai.utils import SeqTokenizer
 from common_ai.generator import MyGenerator
+from common_ai.utils import SeqTokenizer
 
 
 class DataCollator:
-    preprocess = "PDBert"
-
     def __init__(
         self,
         protein_data: os.PathLike,
@@ -27,18 +26,18 @@ class DataCollator:
         self.minimal_unbind_summit_distance = minimal_unbind_summit_distance
         self.select_worst_loss_ratio = select_worst_loss_ratio
         # protein: ACDEFGHIKLMNPQRSTUVWXYosep->0-25
-        # ACDEFGHIKLMNPQRSTVWY: 氨基酸
-        # U: 硒半胱氨酸
-        # X: 未定义氨基酸
-        # o: 其它氨基酸
-        # s: 序列起始位置
-        # e: 序列终止位置
-        # p: pad
+        # ACDEFGHIKLMNPQRSTVWY: amino acids
+        # U: Cysteine
+        # X: undefined amino acids
+        # o: other amino acids
+        # s: start token
+        # e: end token
+        # p: padding token
         self.protein_bert_tokenizer = SeqTokenizer("ACDEFGHIKLMNPQRSTUVWXYosep")
         # DNA: ACGTNsep -> 0-7
-        # s: 序列起始位置
-        # e: 序列终止位置
-        # p: pad
+        # s: start token
+        # e: end token
+        # p: padding token
         self.DNA_bert_tokenizer = SeqTokenizer("ACGTNsep")
         self.recent_losses = {}
 
