@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 
-import os
-
-# 把运行文件夹切换为脚本文件夹
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
 import re
+
 import pandas as pd
 
 df = pd.read_table(

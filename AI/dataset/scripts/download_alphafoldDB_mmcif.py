@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 
-import os
-
-# 把运行文件夹切换为脚本文件夹
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-
 import json
+import os
 import sys
-from requests.exceptions import SSLError
-import requests
 import time
+
 import pandas as pd
+import requests
+from requests.exceptions import SSLError
 
 
 def requests_until_success(method, url, **kwargs):
