@@ -19,7 +19,7 @@ from einops.layers.torch import EinMix, Rearrange
 from torch.backends import opt_einsum
 from torch.nn import BCEWithLogitsLoss
 
-from .data_collator import DataCollator
+from ..data_collator import DataCollator
 from .encoder import DNAEncoder, SecondEncoder
 
 
@@ -29,8 +29,6 @@ class COPFormer(MyModelAbstract, nn.Module):
         protein_feature: os.PathLike,
         protein_length: int,
         DNA_length: int,
-        minimal_unbind_summit_distance: int,
-        select_worst_loss_ratio: float,
         dim_emb: int,
         heads: int,
         dim_head: int,
@@ -50,8 +48,6 @@ class COPFormer(MyModelAbstract, nn.Module):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             DNA_length: maximally allowed DNA length.
-            minimal_unbind_summit_distance: if no protein peak found within this distance of a locus, then this locus is considered not occupied by this protein.
-            select_worst_loss_ratio: the ratio among negative samples to choose the worst (highest) loss according to the most recent loss records.
             dim_emb: embedding dimension size.
             heads: number of attention heads.
             dim_head: dimension size per head.
@@ -67,13 +63,7 @@ class COPFormer(MyModelAbstract, nn.Module):
         """
         super().__init__()
 
-        self.data_collator = DataCollator(
-            protein_feature,
-            protein_length,
-            DNA_length,
-            minimal_unbind_summit_distance,
-            select_worst_loss_ratio,
-        )
+        self.data_collator = DataCollator(protein_feature, protein_length, DNA_length)
 
         self.second_encoder = SecondEncoder(
             12,
@@ -136,7 +126,7 @@ class COPFormer(MyModelAbstract, nn.Module):
         )
 
         self.bce_with_logits_loss = BCEWithLogitsLoss(
-            reduction=None, pos_weight=torch.tensor(pos_weight)
+            reduction="sum", pos_weight=torch.tensor(pos_weight)
         )
 
         self.elastic_net = ElasticNet(reg_l1, reg_l2)
@@ -175,7 +165,7 @@ class COPFormer(MyModelAbstract, nn.Module):
         logit = self.classifier(dna_embs)
 
         if label is not None:
-            loss, loss_num = self.loss_fun(logit, label)
+            loss, loss_num = self.loss_fun(logit, label["bind"])
             return {
                 "logit": logit,
                 "loss": loss,
@@ -183,15 +173,12 @@ class COPFormer(MyModelAbstract, nn.Module):
             }
         return {"logit": logit}
 
-    def loss_fun(self, logit: torch.Tensor, label: dict) -> tuple[float, float]:
+    def loss_fun(self, logit: torch.Tensor, bind: torch.Tensor) -> tuple[float, float]:
         loss_num = logit.shape[0]
-        losses = self.bce_with_logits_loss(input=logit, target=label["bind"])
-        for rn, actual_protein, loss in zip(
-            label["rn"], label["actual_protein"], losses
-        ):
-            self.data_collator.recent_losses[(rn, actual_protein)] = loss
         # elastic_net only regularize weights (not bias) for linear and convolution layers
-        loss = losses.sum() + loss_num * self.elastic_net(self)
+        loss = self.bce_with_logits_loss(
+            input=logit, target=bind
+        ) + loss_num * self.elastic_net(self)
 
         return loss, loss_num
 
@@ -211,22 +198,12 @@ class COPFormer(MyModelAbstract, nn.Module):
             {
                 "sample_idx": np.arange(batch_size),
                 "proba": probas,
-                "protein": batch["label"]["actual_protein"],
+                "protein": [example["protein"] for example in examples],
                 "DNA": [example["DNA"] for example in examples],
             }
         )
 
         return df
-
-    def state_dict(self) -> dict:
-        return {
-            "pytorch_state_dict": super().state_dict(),
-            "recent_loss": self.data_collator.recent_losses,
-        }
-
-    def load_state_dict(self, state_dict: dict) -> None:
-        super().load_state_dict(state_dict["pytorch_state_dict"])
-        self.data_collator.recent_losses = state_dict["recent_loss"]
 
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
