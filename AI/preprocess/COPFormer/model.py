@@ -207,4 +207,32 @@ class COPFormer(MyModelAbstract, nn.Module):
 
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
-        pass
+        cfg.model.init_args.protein_length = trial.suggest_int(
+            "COPFormer/COPFormer/protein_length", 128, 512
+        )
+        cfg.model.init_args.DNA_length = trial.suggest_int(
+            "COPFormer/COPFormer/DNA_length", 64, 256
+        )
+        cfg.model.init_args.dim_emb = trial.suggest_categorical(
+            "COPFormer/COPFormer/dim_emb",
+            choices=[64, 128, 256],
+        )
+        cfg.model.init_args.heads = trial.suggest_int("COPFormer/COPFormer/heads", 2, 6)
+        cfg.model.init_args.dim_head = trial.suggest_categorical(
+            "COPFormer/COPFormer/dim_head",
+            choices=[32, 64, 128],
+        )
+        cfg.model.init_args.depth = trial.suggest_int("COPFormer/COPFormer/depth", 4, 8)
+        cfg.model.init_args.dim_ffn = trial.suggest_categorical(
+            "COPFormer/COPFormer/dim_ffn",
+            choices=[128, 256, 512],
+        )
+        cfg.model.init_args.dropout = trial.suggest_float(
+            "COPFormer/COPFormer/dropout", 0.01, 0.1
+        )
+        cfg.model.init_args.reg_l1 = trial.suggest_float(
+            "COPFormer/COPFormer/reg_l1", 0.000000001, 0.0000001
+        )
+        cfg.model.init_args.reg_l2 = trial.suggest_float(
+            "COPFormer/COPFormer/reg_l2", 0.000000001, 0.0000001
+        )

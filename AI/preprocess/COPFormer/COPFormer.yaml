@@ -1,7 +1,7 @@
 class_path: AI.preprocess.COPFormer.model.COPFormer
 init_args:
   protein_feature: AI/dataset/protein_feature.csv
-  protein_length: 256 
+  protein_length: 256
   DNA_length: 128
   dim_emb: 128
   heads: 4
