@@ -1,19 +1,20 @@
 import os
+from typing import Callable, Optional
+
 import numpy as np
 import pandas as pd
 import torch
-from torch import nn
 import torch.nn.functional as F
-from typing import Optional, Callable
-
-# torch does not import opt_einsum as backend by default. import opt_einsum manually will enable it.
-from torch.backends import opt_einsum
-from einops.layers.torch import Rearrange
-
 from common_ai.generator import MyGenerator
 from common_ai.initializer import MyInitializer
 from common_ai.protein_bert import ProteinBert, ProteinBertLayerCross
-from .data_collator import DataCollator
+from einops.layers.torch import Rearrange
+from torch import nn
+
+# torch does not import opt_einsum as backend by default. import opt_einsum manually will enable it.
+from torch.backends import opt_einsum
+
+from ..COPFormer.data_collator import DataCollator
 
 
 class PDBertModel(nn.Module):
@@ -135,7 +136,6 @@ class PDBertModel(nn.Module):
         protein_id = input["protein_id"].to(self.device)
         DNA_id = input["DNA_id"].to(self.device)
 
-        breakpoint()
         protein_tokens, protein_annotation = self.protein_bert(protein_id)
         DNA_tokens, DNA_annotation = self.DNA_bert(DNA_id)
         for layer_cross in self.layer_crosses:

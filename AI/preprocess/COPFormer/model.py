@@ -1,7 +1,10 @@
 from typing import Optional
 
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from common_ai.generator import MyGenerator
 from common_ai.initializer import MyInitializer
 from common_ai.model import MyModelAbstract
@@ -114,7 +117,7 @@ class COPFormer(MyModelAbstract, nn.Module):
             nn.RMSNorm(dim_emb),
         )
 
-        self.loss_fn = BCEWithLogitsLoss(
+        self.bce_with_logits_loss = BCEWithLogitsLoss(
             reduction="sum", pos_weight=torch.tensor(pos_weight)
         )
 
@@ -130,17 +133,6 @@ class COPFormer(MyModelAbstract, nn.Module):
             wide_conv_dilation=5,
             attn_heads=4,
             attn_dim_head=64,
-        )
-
-    def my_initialize_model(
-        self, my_initializer: MyInitializer, my_generator: MyGenerator
-    ) -> None:
-        my_initializer(self.second_encoder, my_generator)
-        my_initializer(self.dna_encoder, my_generator)
-        my_initializer(self.classifier, my_generator)
-        my_initializer(self.protein_bert_head, my_generator)
-        self.protein_bert.load_pretrain_weights(
-            "AI/preprocess/epoch_92400_sample_23500000.pkl"
         )
 
     def forward(
@@ -190,8 +182,41 @@ class COPFormer(MyModelAbstract, nn.Module):
     def loss_fun(self, logit: torch.Tensor, bind: torch.Tensor) -> tuple[float, float]:
         loss_num = logit.shape[0]
         # elastic_net only regularize weights (not bias) for linear and convolution layers
-        loss = self.loss_fn(input=logit, target=bind) + loss_num * self.elastic_net(
-            self
-        )
+        loss = self.bce_with_logits_loss(
+            input=logit, target=bind
+        ) + loss_num * self.elastic_net(self)
 
         return loss, loss_num
+
+    def my_initialize_model(
+        self, my_initializer: MyInitializer, my_generator: MyGenerator
+    ) -> None:
+        my_initializer(self, my_generator)
+        self.protein_bert.load_pretrain_weights(
+            "AI/preprocess/epoch_92400_sample_23500000.pkl"
+        )
+
+    def eval_output(self, examples: list[dict], batch: dict) -> pd.DataFrame:
+        batch_size = len(examples)
+        result = self(input=batch["input"], label=None, my_generator=None)
+        probas = F.sigmoid(result["logit"]).cpu().numpy()
+        df = pd.DataFrame(
+            {
+                "sample_idx": np.arange(batch_size),
+                "proba": probas,
+                "DNA": [example["DNA"] for example in examples],
+                "protein": [example["protein"] for example in examples],
+            }
+        )
+
+        return df
+
+    def state_dict(self) -> dict:
+        return {
+            "pytorch_state_dict": super().state_dict(),
+            "recent_loss": self.data_collator.recent_losses,
+        }
+
+    def load_state_dict(self, state_dict: dict) -> None:
+        super().load_state_dict(state_dict["pytorch_state_dict"])
+        self.data_collator.recent_losses = state_dict["recent_loss"]
