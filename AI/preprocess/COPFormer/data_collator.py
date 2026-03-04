@@ -13,13 +13,9 @@ class DataCollator:
         protein_feature: os.PathLike,
         protein_length: int,
         DNA_length: int,
-        minimal_unbind_summit_distance: int,
-        select_worst_loss_ratio: float,
     ):
         self.protein_length = protein_length
         self.DNA_length = DNA_length
-        self.minimal_unbind_summit_distance = minimal_unbind_summit_distance
-        self.select_worst_loss_ratio = select_worst_loss_ratio
 
         # protein: ACDEFGHIKLMNPQRSTUVWXYosep->0-25
         # ACDEFGHIKLMNPQRSTVWY: amino acids
@@ -94,7 +90,7 @@ class DataCollator:
     ):
         protein_ids, second_ids, DNA_ids = [], [], []
         if output_label:
-            rns, actual_proteins, binds = [], [], []
+            binds = []
         for example in examples:
             if len(example["DNA"]) >= self.DNA_length:
                 DNA_start = (len(example["DNA"]) - self.DNA_length) // 2
@@ -105,64 +101,19 @@ class DataCollator:
                 )
             DNA_ids.append(self.DNA_tokenizer(DNA))
 
-            if not output_label:
-                # for inference, protein is given
-                actual_protein = example["protein"]
-            else:
-                # for training, evaluation and testing, protein is selected from all mouse C2H2 zinc finger proteins
-                actual_protein = None
-                if my_generator.np_rng.random() < 0.5:
-                    unbind_proteins = [
-                        protein
-                        for protein, distance in example.items()
-                        if protein not in ["rn", "protein", "DNA"]
-                        and (
-                            int(distance) == -1
-                            or int(distance) >= self.minimal_unbind_summit_distance
-                        )
-                    ]
-                    if len(unbind_proteins) > 0:
-                        if my_generator.np_rng.random() > self.select_worst_loss_ratio:
-                            actual_protein = my_generator.np_rng.choice(
-                                unbind_proteins
-                            ).item()
-                        else:
-                            unbind_recent_losses = np.array(
-                                [
-                                    self.recent_losses.get(
-                                        (example["rn"], unbind_protein), np.inf
-                                    )
-                                    for unbind_protein in unbind_proteins
-                                ]
-                            )
-                            actual_protein = unbind_proteins[
-                                my_generator.np_rng.choice(
-                                    np.where(
-                                        unbind_recent_losses
-                                        == unbind_recent_losses.max()
-                                    )[0]
-                                ).item()
-                            ]
-                        bind = 0.0
-                if actual_protein is None:
-                    actual_protein = example["protein"]
-                    bind = 1.0
-
             protein_ids.append(
                 self.protein_feature.loc[
-                    self.protein_feature["Entry"] == actual_protein, "protein_id"
+                    self.protein_feature["Entry"] == example["protein"], "protein_id"
                 ]
             )
             second_ids.append(
                 self.protein_feature.loc[
-                    self.protein_feature["Entry"] == actual_protein, "second_id"
+                    self.protein_feature["Entry"] == example["protein"], "second_id"
                 ]
             )
 
             if output_label:
-                rns.append(example["rn"])
-                actual_proteins.append(actual_protein)
-                binds.append(bind)
+                binds.append(example["bind"])
 
         protein_ids = torch.from_numpy(np.stack(protein_ids))
         second_ids = torch.from_numpy(np.stack(second_ids))
@@ -175,9 +126,7 @@ class DataCollator:
                     "DNA_id": DNA_ids,
                 },
                 "label": {
-                    "rn": rns,
-                    "actual_protein": actual_proteins,
-                    "bind": binds,
+                    "bind": torch.tensor(binds),
                 },
             }
         return {
