@@ -319,6 +319,15 @@ generate_small_data() {
     scripts/generate_small_data.py ${small_line_num} "${accessions[@]}"
 }
 
+split_and_balance_small_data() {
+    title "split and balance small data"
+    minimal_unbind_summit_distance=300
+    validation_ratio=0.05
+    test_ratio=0.05
+    seed=63036
+    scripts/split_and_balance_small_data ${minimal_unbind_summit_distance} ${validation_ratio} ${test_ratio} ${seed}
+}
+
 # download_mm9
 
 # download_uniprot_C2H2_protein_table
@@ -346,3 +355,5 @@ generate_small_data() {
 get_protein_pairwise_closest_peak_distance
 
 # generate_small_train_data
+
+split_and_balance_small_data
