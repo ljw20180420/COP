@@ -4,29 +4,33 @@ import datasets
 import jsonargparse
 import optuna
 from common_ai.dataset import MyDatasetAbstract
-from common_ai.utils import SeqTokenizer, split_train_valid_test
 
 
 class MyDataset(MyDatasetAbstract):
-    def __call__(self) -> datasets.Dataset:
-        """Parameters of dataset.
+    def __init__(
+        self,
+        data_dir: os.PathLike,
+        name: str,
+    ) -> None:
+        """MyDataset arguments.
 
         Args:
-            data_file: The csv file of DNA data.
-            name: name of the file.
-            test_ratio: Proportion for test samples.
-            validation_ratio: Proportion for validation samples.
-            seed: random seed.
+            data_dir: The directory containing csv files.
+            name: name of the dataset.
         """
+        super().__init__(
+            data_file=data_dir,
+            name=name,
+            test_ratio=0.05,  # useless dummy placeholder
+            validation_ratio=0.05,  # useless dummy placeholder
+            seed=63036,  # useless dummy placeholder
+        )
+
+    def __call__(self) -> datasets.Dataset:
         ds = datasets.load_dataset(
             path="csv",
-            data_files=os.fspath(self.data_file),
-        )
-        ds = split_train_valid_test(
-            ds=ds,
-            validation_ratio=self.validation_ratio,
-            test_ratio=self.test_ratio,
-            seed=self.seed,
+            name=self.name,
+            data_dir=self.data_file,  # data_file is actually data_dir
         )
 
         return ds
@@ -34,30 +38,3 @@ class MyDataset(MyDatasetAbstract):
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
         pass
-
-
-def get_dataset(
-    data_file: os.PathLike,
-    name: str,
-    test_ratio: float,
-    validation_ratio: float,
-    seed: int,
-) -> datasets.Dataset:
-    """Parameters of dataset.
-
-    Args:
-        data_file: The csv file of DNA data.
-        name: name of the file.
-        test_ratio: Proportion for test samples.
-        validation_ratio: Proportion for validation samples.
-        seed: random seed.
-    """
-    ds = datasets.load_dataset(
-        path="csv",
-        data_files=os.fspath(data_file),
-    )
-    ds = split_train_valid_test(
-        ds=ds, validation_ratio=validation_ratio, test_ratio=test_ratio, seed=seed
-    )
-
-    return ds

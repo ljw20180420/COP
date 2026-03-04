@@ -1,7 +1,4 @@
 class_path: AI.dataset.MyDataset
 init_args:
-  data_file: AI/dataset/small_DNA_data.csv
+  data_dir: AI/dataset/balanced_small_data
   name: mouse_C2H2
-  test_ratio: 0.1
-  validation_ratio: 0.1
-  seed: 63036
