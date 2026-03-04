@@ -24,6 +24,8 @@ df = (
     )
     .assign(bind=lambda df: df["protein"] == df["actual_protein"])
     .query("bind or distance > @minimal_unbind_summit_distance")
+    .drop(columns=["protein", "distance"])
+    .rename(columns={"actual_protein": "protein"})
 )
 
 df_train, df_valid_test = train_test_split(
