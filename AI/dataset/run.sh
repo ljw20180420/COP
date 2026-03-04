@@ -292,7 +292,7 @@ get_protein_pairwise_closest_peak_distance() {
             <(
                 awk -v accession=${accession} '
                     BEGIN{
-                        printf("accession,DNA\n")
+                        printf("protein,DNA\n")
                     }
                     {
                         printf("%s,%s\n", accession, $5)
@@ -337,12 +337,12 @@ generate_small_train_data() {
 
 # filter_peak_by_width_and_pvalue
 
-resize_peak_and_sort_by_summit
+# resize_peak_and_sort_by_summit
 
 # extract_peak_site_sequence
 
 # get_summit_sorted_peak_before_filter
 
-# get_protein_pairwise_closest_peak_distance
+get_protein_pairwise_closest_peak_distance
 
 # generate_small_train_data

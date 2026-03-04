@@ -16,11 +16,6 @@ class DataCollator:
         minimal_unbind_summit_distance: int,
         select_worst_loss_ratio: float,
     ):
-        df = pd.read_csv(
-            os.fspath(protein_feature),
-            header=0,
-            na_filter=False,
-        )
         self.protein_length = protein_length
         self.DNA_length = DNA_length
         self.minimal_unbind_summit_distance = minimal_unbind_summit_distance
@@ -51,10 +46,14 @@ class DataCollator:
 
         self.recent_losses = {}
 
-        self.protein_ids = []
-        self.second_ids = []
+        self.protein_feature = pd.read_csv(protein_feature, header=0, na_filter=False)
+        protein_ids = []
+        second_ids = []
         for protein, second, zinc_fns, krabs in zip(
-            df["sequence"], df["secondary_structure"], df["zinc_finger"], df["KRAB"]
+            self.protein_feature["sequence"],
+            self.protein_feature["secondary_structure"],
+            self.protein_feature["zinc_finger"],
+            self.protein_feature["KRAB"],
         ):
             assert len(protein) == len(
                 second
@@ -84,15 +83,18 @@ class DataCollator:
                 )
                 second = second[protein_start : protein_start + self.protein_length]
 
-            self.protein_ids.append(self.protein_tokenizer(protein))
-            self.second_ids.append(self.second_tokenizer(second))
+            protein_ids.append(self.protein_tokenizer(protein))
+            second_ids.append(self.second_tokenizer(second))
+
+        self.protein_feature["protein_id"] = protein_ids
+        self.protein_feature["second_id"] = second_ids
 
     def __call__(
         self, examples: list[dict], output_label: bool, my_generator: MyGenerator
     ):
         protein_ids, second_ids, DNA_ids = [], [], []
         if output_label:
-            rns, actual_indices, binds = [], [], []
+            rns, actual_proteins, binds = [], [], []
         for example in examples:
             if len(example["DNA"]) >= self.DNA_length:
                 DNA_start = (len(example["DNA"]) - self.DNA_length) // 2
@@ -103,29 +105,37 @@ class DataCollator:
                 )
             DNA_ids.append(self.DNA_tokenizer(DNA))
 
-            if "protein" not in example:
-                # for training, protein is not given
-                actual_index = None
+            if not output_label:
+                # for inference, protein is given
+                actual_protein = example["protein"]
+            else:
+                # for training, evaluation and testing, protein is selected from all mouse C2H2 zinc finger proteins
+                actual_protein = None
                 if my_generator.np_rng.random() < 0.5:
-                    unbind_indices = [
-                        index
-                        for index, distance in enumerate(example["distance"].split(":"))
-                        if int(distance) == -1
-                        or int(distance) >= self.minimal_unbind_summit_distance
+                    unbind_proteins = [
+                        protein
+                        for protein, distance in example.items()
+                        if protein not in ["rn", "protein", "DNA"]
+                        and (
+                            int(distance) == -1
+                            or int(distance) >= self.minimal_unbind_summit_distance
+                        )
                     ]
-                    if len(unbind_indices) > 0:
+                    if len(unbind_proteins) > 0:
                         if my_generator.np_rng.random() > self.select_worst_loss_ratio:
-                            actual_index = my_generator.np_rng.choice(unbind_indices)
+                            actual_protein = my_generator.np_rng.choice(
+                                unbind_proteins
+                            ).item()
                         else:
                             unbind_recent_losses = np.array(
                                 [
                                     self.recent_losses.get(
-                                        (example["rn"], unbind_index), np.inf
+                                        (example["rn"], unbind_protein), np.inf
                                     )
-                                    for unbind_index in unbind_indices
+                                    for unbind_protein in unbind_proteins
                                 ]
                             )
-                            actual_index = unbind_indices[
+                            actual_protein = unbind_proteins[
                                 my_generator.np_rng.choice(
                                     np.where(
                                         unbind_recent_losses
@@ -134,55 +144,46 @@ class DataCollator:
                                 ).item()
                             ]
                         bind = 0.0
-                if actual_index is None:
-                    actual_index = example["index"]
+                if actual_protein is None:
+                    actual_protein = example["protein"]
                     bind = 1.0
-                protein_ids.append(self.protein_ids[actual_index])
-                second_ids.append(self.second_ids[actual_index])
-            else:
-                # TODO: need to prepare secondary structure, zinc finger, KRAB for all mouse C2H2 zinc finger protein for evaluation
-                # For evaluation, the protein is given.
-                assert "second" in example, "need secondary structure to evaluate"
-                if len(example["protein"]) > self.protein_length:
-                    protein_start = (len(example["protein"]) - self.protein_length) // 2
-                    protein_fix = (
-                        "s"
-                        + example["protein"][
-                            protein_start : protein_start + self.protein_length
-                        ]
-                        + "e"
-                    )
-                else:
-                    protein_fix = (
-                        "s"
-                        + example["protein"]
-                        + "e"
-                        + "p" * (self.protein_length - len(example["protein"]))
-                    )
-                protein_ids.append(self.protein_bert_tokenizer(protein_fix))
+
+            protein_ids.append(
+                self.protein_feature.loc[
+                    self.protein_feature["Entry"] == actual_protein, "protein_id"
+                ]
+            )
+            second_ids.append(
+                self.protein_feature.loc[
+                    self.protein_feature["Entry"] == actual_protein, "second_id"
+                ]
+            )
 
             if output_label:
                 rns.append(example["rn"])
-                actual_indices.append(actual_index)
+                actual_proteins.append(actual_protein)
                 binds.append(bind)
 
         protein_ids = torch.from_numpy(np.stack(protein_ids))
+        second_ids = torch.from_numpy(np.stack(second_ids))
         DNA_ids = torch.from_numpy(np.stack(DNA_ids))
         if output_label:
             return {
                 "input": {
                     "protein_id": protein_ids,
+                    "second_id": second_ids,
                     "DNA_id": DNA_ids,
                 },
                 "label": {
                     "rn": rns,
-                    "actual_index": actual_indices,
+                    "actual_protein": actual_proteins,
                     "bind": binds,
                 },
             }
         return {
             "input": {
                 "protein_id": protein_ids,
+                "second_id": second_ids,
                 "DNA_id": DNA_ids,
             },
         }
