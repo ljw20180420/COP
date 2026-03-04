@@ -311,12 +311,12 @@ get_seeded_random()
     </dev/zero 2>/dev/null
 }
 
-generate_small_train_data() {
-    title "generate small train data"
+generate_small_data() {
+    title "generate small data"
     local accessions=()
     collect_accession accessions
     small_line_num=3000
-    scripts/generate_small_train_data.py ${small_line_num} "${accessions[@]}"
+    scripts/generate_small_data.py ${small_line_num} "${accessions[@]}"
 }
 
 # download_mm9
