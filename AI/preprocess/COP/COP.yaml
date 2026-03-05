@@ -1,7 +1,6 @@
 class_path: AI.preprocess.COP.model.COP
 init_args:
   protein_feature: AI/dataset/protein_feature.csv
-  small_data: AI/dataset/small_data.csv
   protein_length: 200
   DNA_length: 100
   dim_emb: 64

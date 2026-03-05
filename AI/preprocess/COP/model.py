@@ -27,7 +27,6 @@ class COP(MyModelAbstract, nn.Module):
     def __init__(
         self,
         protein_feature: os.PathLike,
-        small_data: os.PathLike,
         protein_length: int,
         DNA_length: int,
         dim_emb: int,
@@ -47,7 +46,6 @@ class COP(MyModelAbstract, nn.Module):
 
         Args:
             protein_feature: file contains info for mouse C2H2 zinc fingers.
-            small_data: file contrains info for C2H2 ChIP-seq peaks.
             protein_length: maximally allowed protein length.
             DNA_length: maximally allowed DNA length.
             dim_emb: embedding dimension size.
@@ -65,9 +63,7 @@ class COP(MyModelAbstract, nn.Module):
         """
         super().__init__()
 
-        self.data_collator = DataCollator(
-            protein_feature, small_data, protein_length, DNA_length
-        )
+        self.data_collator = DataCollator(protein_feature, protein_length, DNA_length)
 
         self.second_encoder = SecondEncoder(
             12,

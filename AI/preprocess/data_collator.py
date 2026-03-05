@@ -11,14 +11,12 @@ class DataCollator:
     def __init__(
         self,
         protein_feature: os.PathLike,
-        small_data: os.PathLike,
         protein_length: int,
         DNA_length: int,
     ):
         self.protein_feature = pd.read_csv(
             protein_feature, header=0, na_filter=False
         ).drop(columns=["Reviewed", "Entry Name", "disorder"])
-        self.DNAs = pd.read_csv(small_data, header=0)["DNA"]
         self.protein_length = protein_length
         self.DNA_length = DNA_length
 
@@ -96,7 +94,7 @@ class DataCollator:
         if output_label:
             binds = []
         for example in examples:
-            DNA == self.DNAs[example["DNAidx"]]
+            DNA == example["DNA"]
             if len(DNA) >= self.DNA_length:
                 DNA_start = (len(DNA) - self.DNA_length) // 2
                 DNA = "c" + DNA[DNA_start : DNA_start + self.DNA_length]
