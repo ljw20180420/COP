@@ -1,0 +1,6 @@
+input: AI/dataset/inference_data.csv
+# output:
+
+inference: inference/inference.yaml
+
+test: test.yaml

@@ -183,6 +183,10 @@ class MatthewsCorrelationMetric(MyMetricAbstract):
 
 class RocAucMetric(MyMetricAbstract):
     def __init__(self):
+        """RocAucMetric arguments.
+
+        Args:
+        """
         self.roc_auc = evaluate.load(
             (
                 pathlib.Path(__file__).resolve().parent / "metric" / "roc_auc.py"
@@ -211,6 +215,10 @@ class RocAucMetric(MyMetricAbstract):
 
 class PrAucMetric(MyMetricAbstract):
     def __init__(self):
+        """RocAucMetric arguments.
+
+        Args:
+        """
         self.probas = []
         self.binds = []
 
@@ -234,6 +242,10 @@ class PrAucMetric(MyMetricAbstract):
 
 class BrierScoreMetric(MyMetricAbstract):
     def __init__(self):
+        """RocAucMetric arguments.
+
+        Args:
+        """
         self.brier_score = evaluate.load(
             (
                 pathlib.Path(__file__).resolve().parent / "metric" / "brier_score.py"
