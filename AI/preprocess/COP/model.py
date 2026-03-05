@@ -214,10 +214,10 @@ class COP(MyModelAbstract, nn.Module):
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
         cfg.model.init_args.protein_length = trial.suggest_int(
-            "COP/COP/protein_length", 128, 512
+            "COP/COP/protein_length", 100, 300
         )
         cfg.model.init_args.DNA_length = trial.suggest_int(
-            "COP/COP/DNA_length", 64, 256
+            "COP/COP/DNA_length", 50, 150
         )
         cfg.model.init_args.dim_emb = trial.suggest_categorical(
             "COP/COP/dim_emb",
