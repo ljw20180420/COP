@@ -43,8 +43,6 @@ class DataCollator:
         # ACGTN: nucleotides
         self.DNA_tokenizer = SeqTokenizer("mcACGTN")
 
-        self.recent_losses = {}
-
         protein_ids = []
         second_ids = []
         for protein, second, zinc_fns, krabs in zip(
