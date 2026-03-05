@@ -198,9 +198,7 @@ class COP(MyModelAbstract, nn.Module):
             {
                 "sample_idx": np.arange(batch_size),
                 "proba": probas,
-                "DNA": [
-                    self.data_collator.DNAs[example["DNAidx"]] for example in examples
-                ],
+                "DNA": [example["DNA"] for example in examples],
                 "protein": [example["protein"] for example in examples],
             }
         )
