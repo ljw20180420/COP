@@ -11,19 +11,25 @@ validation_ratio = float(sys.argv[2])
 test_ratio = float(sys.argv[3])
 seed = int(sys.argv[4])
 
-df = pd.read_csv("small_DNA_data.csv", header=0)
+breakpoint()
+df = (
+    pd.read_csv("small_data.csv", header=0)
+    .drop(columns="DNA")
+    .reset_index(names=["DNAidx"])
+)
 value_vars = df.columns.tolist()
 value_vars.remove("protein")
-value_vars.remove("DNA")
+value_vars.remove("DNAidx")
 df = (
     df.melt(
-        id_vars=["protein", "DNA"],
+        id_vars=["protein", "DNAidx"],
         value_vars=value_vars,
         var_name="actual_protein",
         value_name="distance",
     )
     .assign(bind=lambda df: df["protein"] == df["actual_protein"])
     .query("bind or distance > @minimal_unbind_summit_distance")
+    .reset_index(drop=True)
     .drop(columns=["protein", "distance"])
     .rename(columns={"actual_protein": "protein"})
 )

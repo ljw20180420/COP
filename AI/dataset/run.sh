@@ -325,7 +325,7 @@ split_and_balance_small_data() {
     validation_ratio=0.05
     test_ratio=0.05
     seed=63036
-    scripts/split_and_balance_small_data ${minimal_unbind_summit_distance} ${validation_ratio} ${test_ratio} ${seed}
+    scripts/split_and_balance_small_data.py ${minimal_unbind_summit_distance} ${validation_ratio} ${test_ratio} ${seed}
 }
 
 # download_mm9
@@ -352,8 +352,8 @@ split_and_balance_small_data() {
 
 # get_summit_sorted_peak_before_filter
 
-get_protein_pairwise_closest_peak_distance
+# get_protein_pairwise_closest_peak_distance
 
-# generate_small_train_data
+# generate_small_data
 
 split_and_balance_small_data
