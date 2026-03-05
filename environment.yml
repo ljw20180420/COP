@@ -22,5 +22,10 @@ dependencies:
     - transformers
     - diffusers
     - evaluate
+    - torchao
     - torchtune
     - gradio
+    - tbparse
+    - HolisticTraceAnalysis
+    - plotnine
+    - shap
