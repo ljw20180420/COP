@@ -58,6 +58,6 @@ def balance_pos_neg(df: pd.DataFrame) -> pd.DataFrame:
 
 
 os.makedirs("balanced_small_data", exist_ok=True)
-balance_pos_neg(df_train).to_csv("balanced_small_data/train.csv")
-balance_pos_neg(df_valid).to_csv("balanced_small_data/validation.csv")
-balance_pos_neg(df_test).to_csv("balanced_small_data/test.csv")
+balance_pos_neg(df_train).to_csv("balanced_small_data/train.csv", index=False)
+balance_pos_neg(df_valid).to_csv("balanced_small_data/validation.csv", index=False)
+balance_pos_neg(df_test).to_csv("balanced_small_data/test.csv", index=False)
