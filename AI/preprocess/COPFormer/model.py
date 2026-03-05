@@ -215,17 +215,17 @@ class COPFormer(MyModelAbstract, nn.Module):
         )
         cfg.model.init_args.dim_emb = trial.suggest_categorical(
             "COPFormer/COPFormer/dim_emb",
-            choices=[64, 128, 256],
-        )
-        cfg.model.init_args.heads = trial.suggest_int("COPFormer/COPFormer/heads", 2, 6)
-        cfg.model.init_args.dim_head = trial.suggest_categorical(
-            "COPFormer/COPFormer/dim_head",
             choices=[32, 64, 128],
         )
-        cfg.model.init_args.depth = trial.suggest_int("COPFormer/COPFormer/depth", 4, 8)
+        cfg.model.init_args.heads = trial.suggest_int("COPFormer/COPFormer/heads", 1, 3)
+        cfg.model.init_args.dim_head = trial.suggest_categorical(
+            "COPFormer/COPFormer/dim_head",
+            choices=[16, 32, 64],
+        )
+        cfg.model.init_args.depth = trial.suggest_int("COPFormer/COPFormer/depth", 2, 6)
         cfg.model.init_args.dim_ffn = trial.suggest_categorical(
             "COPFormer/COPFormer/dim_ffn",
-            choices=[128, 256, 512],
+            choices=[64, 128, 256],
         )
         cfg.model.init_args.dropout = trial.suggest_float(
             "COPFormer/COPFormer/dropout", 0.01, 0.1

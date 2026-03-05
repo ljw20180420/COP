@@ -3,11 +3,11 @@ init_args:
   protein_feature: AI/dataset/protein_feature.csv
   protein_length: 256
   DNA_length: 128
-  dim_emb: 128
-  heads: 4
-  dim_head: 64
-  depth: 6
-  dim_ffn: 256
+  dim_emb: 64
+  heads: 2
+  dim_head: 32
+  depth: 4
+  dim_ffn: 128
   dropout: 0.05
   pos_weight: 1.0
   reg_l1: 0.00000001
