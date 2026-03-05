@@ -37,6 +37,8 @@ download_alphafoldDB_mmcif() {
 infer_secondary_structure() {
     title "infer secondary structure"
     printf "accession,sequence,secondary_structure\n" >secondary_structure.csv
+    local mmcif
+    local stem
     for mmcif in $(find alphafoldDB_mmcif/ -name "*.mmcif")
     do
         stem=${mmcif##*/}
@@ -56,6 +58,8 @@ parse_protein_feature() {
 
 collect_accession() {
     local -n ref_accessions="$1"
+    local narrowPeak
+    local accession
     for narrowPeak in $(ls $DATA_DIR/sorted/*.sorted.narrowPeak)
     do
         accession=$(basename ${narrowPeak%%.*})
@@ -67,6 +71,7 @@ clean_sorted_peak() {
     title "clean sorted peak"
     local accessions=()
     collect_accession accessions
+    local accession
     for accession in "${accessions[@]}"
     do
         printf "clean sorted narrowPeak for %s\n" $accession
@@ -85,7 +90,8 @@ remove_black_peak_and_cluster_peak() {
     local accessions=()
     collect_accession accessions
     mkdir -p $DATA_DIR/clustered
-    cluster_max_distance="-50"
+    local cluster_max_distance="-50"
+    local accession
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/clustered/$accession.clustered.narrowPeak" ]
@@ -109,7 +115,8 @@ choose_peak_by_pvalue_quantile_from_cluster() {
     local accessions=()
     collect_accession accessions
     mkdir -p $DATA_DIR/selected
-    cluster_quantile=0.9
+    local cluster_quantile=0.9
+    local accession
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/selected/$accession.selected.narrowPeak" ]
@@ -129,6 +136,11 @@ filter_peak_by_width_and_pvalue() {
     local accessions=()
     collect_accession accessions
     mkdir -p $DATA_DIR/filtered
+    local wlb
+    local wub
+    local plb
+    local pub
+    local accession
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/filtered/$accession.filtered.narrowPeak" ]
@@ -171,7 +183,8 @@ resize_peak_and_sort_by_summit() {
     local accessions=()
     collect_accession accessions
     mkdir -p $DATA_DIR/sized
-    seq_len=256
+    local seq_len=256
+    local accession
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/sized/$accession.sized.narrowPeak" ]
@@ -204,6 +217,7 @@ extract_peak_site_sequence() {
     local accessions=()
     collect_accession accessions
     mkdir -p $DATA_DIR/positive
+    local accession
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/positive/$accession.positive" ]
@@ -232,6 +246,7 @@ get_summit_sorted_peak_before_filter() {
     local accessions=()
     collect_accession accessions
     mkdir -p "$DATA_DIR/before_filter"
+    local accession
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/before_filter/${accession}.bed" ]
@@ -254,6 +269,8 @@ get_protein_pairwise_closest_peak_distance() {
     collect_accession accessions
     mkdir -p $DATA_DIR/train_data
     local dis_files
+    local accession
+    local accession2
     for accession in "${accessions[@]}"
     do
         if [ -f "$DATA_DIR/train_data/${accession}.csv" ]
@@ -306,7 +323,7 @@ get_protein_pairwise_closest_peak_distance() {
 
 get_seeded_random()
 {
-    seed="$1"
+    local seed="$1"
     openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
     </dev/zero 2>/dev/null
 }
@@ -315,17 +332,47 @@ generate_small_data() {
     title "generate small data"
     local accessions=()
     collect_accession accessions
-    small_line_num=3000
+    local small_line_num=3000
     scripts/generate_small_data.py ${small_line_num} "${accessions[@]}"
 }
 
 split_and_balance_small_data() {
     title "split and balance small data"
-    minimal_unbind_summit_distance=300
-    validation_ratio=0.05
-    test_ratio=0.05
-    seed=63036
+    local minimal_unbind_summit_distance=300
+    local validation_ratio=0.05
+    local test_ratio=0.05
+    local seed=63036
     scripts/split_and_balance_small_data.py ${minimal_unbind_summit_distance} ${validation_ratio} ${test_ratio} ${seed}
+}
+
+random_DNA()
+{
+    local length=$1
+    local chars="ACGT"
+    local str=""
+    for ((i = 0; i < ${length}; ++i)); do
+        str+=${chars:RANDOM%${#chars}:1}
+    done
+    printf $str
+}
+
+generate_inference_data() {
+    local number=100
+    local seq_len=256
+    printf "DNA,protein\n" > inference_data.csv
+    paste -d, \
+        <(
+            tail -n+2 \
+                protein_feature.csv |
+            cut -d, -f1 | shuf -n ${number} -r
+        ) \
+        <(
+            for (( i=0; i<${number}; ++i ))
+            do
+                echo $(random_DNA ${seq_len})
+            done
+        ) \
+        >> inference_data.csv
 }
 
 # download_mm9
@@ -356,4 +403,6 @@ split_and_balance_small_data() {
 
 # generate_small_data
 
-split_and_balance_small_data
+# split_and_balance_small_data
+
+generate_inference_data
