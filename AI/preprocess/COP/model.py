@@ -23,7 +23,7 @@ from ..data_collator import DataCollator
 from .encoder import DNAEncoder, SecondEncoder
 
 
-class COPFormer(MyModelAbstract, nn.Module):
+class COP(MyModelAbstract, nn.Module):
     def __init__(
         self,
         protein_feature: os.PathLike,
@@ -42,7 +42,7 @@ class COPFormer(MyModelAbstract, nn.Module):
         hyena_order: int,
         hyena_filter_order: int,
     ) -> None:
-        """COPFormer arguments.
+        """COP arguments.
 
         Args:
             protein_feature: file contains info for mouse C2H2 zinc fingers.
@@ -208,31 +208,29 @@ class COPFormer(MyModelAbstract, nn.Module):
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
         cfg.model.init_args.protein_length = trial.suggest_int(
-            "COPFormer/COPFormer/protein_length", 128, 512
+            "COP/COP/protein_length", 128, 512
         )
         cfg.model.init_args.DNA_length = trial.suggest_int(
-            "COPFormer/COPFormer/DNA_length", 64, 256
+            "COP/COP/DNA_length", 64, 256
         )
         cfg.model.init_args.dim_emb = trial.suggest_categorical(
-            "COPFormer/COPFormer/dim_emb",
+            "COP/COP/dim_emb",
             choices=[32, 64, 128],
         )
-        cfg.model.init_args.heads = trial.suggest_int("COPFormer/COPFormer/heads", 1, 3)
+        cfg.model.init_args.heads = trial.suggest_int("COP/COP/heads", 1, 3)
         cfg.model.init_args.dim_head = trial.suggest_categorical(
-            "COPFormer/COPFormer/dim_head",
+            "COP/COP/dim_head",
             choices=[16, 32, 64],
         )
-        cfg.model.init_args.depth = trial.suggest_int("COPFormer/COPFormer/depth", 2, 6)
+        cfg.model.init_args.depth = trial.suggest_int("COP/COP/depth", 2, 6)
         cfg.model.init_args.dim_ffn = trial.suggest_categorical(
-            "COPFormer/COPFormer/dim_ffn",
+            "COP/COP/dim_ffn",
             choices=[64, 128, 256],
         )
-        cfg.model.init_args.dropout = trial.suggest_float(
-            "COPFormer/COPFormer/dropout", 0.01, 0.1
-        )
+        cfg.model.init_args.dropout = trial.suggest_float("COP/COP/dropout", 0.01, 0.1)
         cfg.model.init_args.reg_l1 = trial.suggest_float(
-            "COPFormer/COPFormer/reg_l1", 0.000000001, 0.0000001
+            "COP/COP/reg_l1", 0.000000001, 0.0000001
         )
         cfg.model.init_args.reg_l2 = trial.suggest_float(
-            "COPFormer/COPFormer/reg_l2", 0.000000001, 0.0000001
+            "COP/COP/reg_l2", 0.000000001, 0.0000001
         )
