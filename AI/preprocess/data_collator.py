@@ -11,9 +11,14 @@ class DataCollator:
     def __init__(
         self,
         protein_feature: os.PathLike,
+        small_data: os.PathLike,
         protein_length: int,
         DNA_length: int,
     ):
+        self.protein_feature = pd.read_csv(
+            protein_feature, header=0, na_filter=False
+        ).drop(columns=["Reviewed", "Entry Name", "disorder"])
+        self.DNAs = pd.read_csv(small_data, header=0)["DNA"]
         self.protein_length = protein_length
         self.DNA_length = DNA_length
 
@@ -42,7 +47,6 @@ class DataCollator:
 
         self.recent_losses = {}
 
-        self.protein_feature = pd.read_csv(protein_feature, header=0, na_filter=False)
         protein_ids = []
         second_ids = []
         for protein, second, zinc_fns, krabs in zip(
@@ -92,13 +96,12 @@ class DataCollator:
         if output_label:
             binds = []
         for example in examples:
-            if len(example["DNA"]) >= self.DNA_length:
-                DNA_start = (len(example["DNA"]) - self.DNA_length) // 2
-                DNA = "c" + example["DNA"][DNA_start : DNA_start + self.DNA_length]
+            DNA == self.DNAs[example["DNAidx"]]
+            if len(DNA) >= self.DNA_length:
+                DNA_start = (len(DNA) - self.DNA_length) // 2
+                DNA = "c" + DNA[DNA_start : DNA_start + self.DNA_length]
             else:
-                DNA = (
-                    "c" + example["DNA"] + (self.DNA_length - len(example["DNA"])) * "m"
-                )
+                DNA = "c" + DNA + (self.DNA_length - len(DNA)) * "m"
             DNA_ids.append(self.DNA_tokenizer(DNA))
 
             protein_ids.append(
