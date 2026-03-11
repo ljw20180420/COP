@@ -1,2 +1,0 @@
-cudatoolkit=11
-cudnn=8
