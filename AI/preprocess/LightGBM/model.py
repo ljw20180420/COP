@@ -24,6 +24,11 @@ class LightGBM(MyModelAbstract):
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
+        eta: float,
+        max_depth: int,
+        subsample: float,
+        reg_lambda: float,
+        num_boost_round: int,
     ) -> None:
         """LigtGBM arguments.
 
@@ -31,8 +36,19 @@ class LightGBM(MyModelAbstract):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
+            eta: Shrink of step size after each round.
+            max_depth: maximum depth of a tree.
+            subsample: subsample ratio of the training instances.
+            reg_lambda: L2 regularization term on weights.
+            num_boost_round: Number of trees generated in single epochs.
         """
         super().__init__()
+
+        self.eta = eta
+        self.max_depth = max_depth
+        self.subsample = subsample
+        self.reg_lambda = reg_lambda
+        self.num_boost_round = num_boost_round
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
