@@ -6,14 +6,10 @@ import pathlib
 import numpy as np
 import pandas as pd
 from common_ai.config import get_config, get_train_parser
-from common_ai.hpo import MyHpo
-from common_ai.hta import MyHta
 from common_ai.test import MyTest
 from common_ai.train import MyTrain
 
-# from AI.gradio_fn import MyGradioFn
-# from AI.inference import MyInference
-# from AI.shap import MyShap
+from AI.inference import MyInference
 
 # change directory to the current script
 os.chdir(pathlib.Path(__file__).parent)
@@ -34,3 +30,13 @@ cfg = parser.parse_args()
 if cfg.subcommand == "train":
     for epoch in MyTrain(**cfg.train.train.as_dict())(train_parser):
         pass
+
+elif cfg.subcommand == "test":
+    epoch = MyTest(**cfg.test.as_dict())(train_parser)
+
+elif cfg.subcommand == "infer":
+    MyInference(**cfg.infer.inference.init_args.as_dict())(
+        infer_df=pd.read_csv(cfg.infer.input),
+        test_cfg=cfg.infer.test,
+        train_parser=train_parser,
+    ).to_csv(cfg.infer.output, index=False)

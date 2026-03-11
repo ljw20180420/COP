@@ -1,5 +1,5 @@
 input: AI/dataset/inference_data.csv
-# output:
+output: AI/dataset/inference_output.csv
 
 inference: inference/inference.yaml
 

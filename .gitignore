@@ -18,6 +18,7 @@ tmp_b_c.txt
 /AI/dataset/small_data.csv
 /AI/dataset/balanced_small_data
 /AI/dataset/inference_data.csv
+/AI/dataset/inference_output.csv
 /AI/dataset/extra/data
 AI_models/bind_transformer/checkpoints
 AI_models/bind_transformer/pipeline
