@@ -12,9 +12,7 @@ title() {
 
 train_config=AI/train.yaml
 output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/default
-data_name="mouse_C2H2"
 
-title ${data_name}
 for pre_model in \
     COP:COP
 do
@@ -24,5 +22,5 @@ do
     model_config=AI/preprocess/${preprocess}/${model_cls}.yaml
 
     title Train
-    ./run.py train --config ${train_config} --train.output_dir ${output_dir} --train.trial_name default --train.evaluation_only false --dataset.name ${data_name} --model ${model_config}
+    ./run.py train --config ${train_config} --train.output_dir ${output_dir} --train.trial_name default --train.evaluation_only false --model ${model_config}
 done

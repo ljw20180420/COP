@@ -28,7 +28,7 @@ class COP(MyModelAbstract, nn.Module):
         self,
         protein_feature: os.PathLike,
         protein_length: int,
-        DNA_length: int,
+        dna_length: int,
         dim_emb: int,
         heads: int,
         dim_head: int,
@@ -47,7 +47,7 @@ class COP(MyModelAbstract, nn.Module):
         Args:
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
-            DNA_length: maximally allowed DNA length.
+            dna_length: maximally allowed DNA length.
             dim_emb: embedding dimension size.
             heads: number of attention heads.
             dim_head: dimension size per head.
@@ -63,7 +63,7 @@ class COP(MyModelAbstract, nn.Module):
         """
         super().__init__()
 
-        self.data_collator = DataCollator(protein_feature, protein_length, DNA_length)
+        self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.second_encoder = SecondEncoder(
             12,
@@ -81,7 +81,7 @@ class COP(MyModelAbstract, nn.Module):
 
         self.dna_encoder = DNAEncoder(
             7,
-            DNA_length,
+            max(protein_length, dna_length),
             dim_emb,
             dim_head,
             heads,
@@ -150,22 +150,24 @@ class COP(MyModelAbstract, nn.Module):
         my_generator: Optional[MyGenerator],
     ) -> dict:
         # encode protein
-        protein_embs = self.protein_bert(input["protein_id"])
+        protein_embs, _ = self.protein_bert(input["protein_id"].to(self.device))
         protein_embs = self.protein_bert_head(protein_embs)
 
         # encode secondary structure
-        second_embs, second_mask = self.second_encoder(input["second_id"])
+        second_embs, second_mask = self.second_encoder(
+            input["second_id"].to(self.device)
+        )
 
         # encode DNA
         dna_embs = self.dna_encoder(
-            input["dna_id"], protein_embs, second_embs, second_mask
+            input["dna_id"].to(self.device), protein_embs, second_embs, second_mask
         )
 
         # classify
         logit = self.classifier(dna_embs)
 
         if label is not None:
-            loss, loss_num = self.loss_fun(logit, label["bind"])
+            loss, loss_num = self.loss_fun(logit, label["bind"].to(self.device))
             return {
                 "logit": logit,
                 "loss": loss,
@@ -210,22 +212,22 @@ class COP(MyModelAbstract, nn.Module):
         cfg.model.init_args.protein_length = trial.suggest_int(
             "COP/COP/protein_length", 100, 300
         )
-        cfg.model.init_args.DNA_length = trial.suggest_int(
-            "COP/COP/DNA_length", 50, 150
+        cfg.model.init_args.dna_length = trial.suggest_int(
+            "COP/COP/dna_length", 50, 150
         )
         cfg.model.init_args.dim_emb = trial.suggest_categorical(
             "COP/COP/dim_emb",
-            choices=[32, 64, 128],
+            choices=[16, 32, 64],
         )
         cfg.model.init_args.heads = trial.suggest_int("COP/COP/heads", 1, 3)
         cfg.model.init_args.dim_head = trial.suggest_categorical(
             "COP/COP/dim_head",
-            choices=[16, 32, 64],
+            choices=[8, 16, 32],
         )
-        cfg.model.init_args.depth = trial.suggest_int("COP/COP/depth", 2, 6)
+        cfg.model.init_args.depth = trial.suggest_int("COP/COP/depth", 1, 3)
         cfg.model.init_args.dim_ffn = trial.suggest_categorical(
             "COP/COP/dim_ffn",
-            choices=[64, 128, 256],
+            choices=[32, 64, 128],
         )
         cfg.model.init_args.dropout = trial.suggest_float("COP/COP/dropout", 0.01, 0.1)
         cfg.model.init_args.reg_l1 = trial.suggest_float(

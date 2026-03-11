@@ -1,7 +1,7 @@
 import torch
 from common_ai.non_causality_hyena import HyenaOperator
 from common_ai.utils import Residual
-from einops import einsum
+from einops import einsum, repeat
 from einops.layers.torch import EinMix
 from torch import nn
 
@@ -392,6 +392,7 @@ class DNAEncoder(nn.Module):
             dna_embs = dna_embs + self.dna_protein_cross_attentions[i](
                 x=dna_embs_rms,
                 y=protein_embs,
+                mask=repeat(dna_mask, "b s1 -> b s1 s2", s2=protein_embs.shape[1]),
             )
 
             # DNA and secondary structure cross-attention

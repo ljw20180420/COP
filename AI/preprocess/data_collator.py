@@ -12,13 +12,13 @@ class DataCollator:
         self,
         protein_feature: os.PathLike,
         protein_length: int,
-        DNA_length: int,
+        dna_length: int,
     ):
         self.protein_feature = pd.read_csv(
             protein_feature, header=0, na_filter=False
         ).drop(columns=["Reviewed", "Entry Name", "disorder"])
         self.protein_length = protein_length
-        self.DNA_length = DNA_length
+        self.dna_length = dna_length
 
         # protein: ACDEFGHIKLMNPQRSTUVWXYosep->0-25
         # ACDEFGHIKLMNPQRSTVWY: amino acids
@@ -41,7 +41,7 @@ class DataCollator:
         # m: mask token
         # c: CLS token
         # ACGTN: nucleotides
-        self.DNA_tokenizer = SeqTokenizer("mcACGTN")
+        self.dna_tokenizer = SeqTokenizer("mcACGTN")
 
         protein_ids = []
         second_ids = []
@@ -58,15 +58,18 @@ class DataCollator:
             zinc_fns = [int(pos) for pos in zinc_fns.split(":")]
             for zf_start, zf_end in zip(zinc_fns[::2], zinc_fns[1::2]):
                 second = second[:zf_start] + "Z" * (zf_end - zf_start) + second[zf_end:]
-            krabs = [int(pos) for pos in krabs.split(":")]
-            for kb_start, kb_end in zip(krabs[::2], krabs[1::2]):
-                second = second[:kb_start] + "K" * (kb_end - kb_start) + second[kb_end:]
+            if krabs:
+                krabs = [int(pos) for pos in krabs.split(":")]
+                for kb_start, kb_end in zip(krabs[::2], krabs[1::2]):
+                    second = (
+                        second[:kb_start] + "K" * (kb_end - kb_start) + second[kb_end:]
+                    )
 
             if len(protein) <= self.protein_length:
                 protein = (
                     "s" + protein + "e" + "p" * (self.protein_length - len(protein))
                 )
-                second = second + "m" * (self.protein_length - len(protein))
+                second = second + "m" * (self.protein_length - len(second))
             else:
                 zinc_fn_center = np.array(zinc_fns).mean().item()
                 protein_start = int(
@@ -82,33 +85,35 @@ class DataCollator:
             protein_ids.append(self.protein_tokenizer(protein))
             second_ids.append(self.second_tokenizer(second))
 
-        self.protein_feature["protein_id"] = protein_ids
-        self.protein_feature["second_id"] = second_ids
+        self.protein_feature = self.protein_feature.assign(
+            protein_id=protein_ids,
+            second_id=second_ids,
+        )
 
     def __call__(
         self, examples: list[dict], output_label: bool, my_generator: MyGenerator
     ):
-        protein_ids, second_ids, DNA_ids = [], [], []
+        protein_ids, second_ids, dna_ids = [], [], []
         if output_label:
             binds = []
         for example in examples:
-            DNA == example["DNA"]
-            if len(DNA) >= self.DNA_length:
-                DNA_start = (len(DNA) - self.DNA_length) // 2
-                DNA = "c" + DNA[DNA_start : DNA_start + self.DNA_length]
+            dna = example["DNA"]
+            if len(dna) >= self.dna_length:
+                dna_start = (len(dna) - self.dna_length) // 2
+                dna = "c" + dna[dna_start : dna_start + self.dna_length]
             else:
-                DNA = "c" + DNA + (self.DNA_length - len(DNA)) * "m"
-            DNA_ids.append(self.DNA_tokenizer(DNA))
+                dna = "c" + dna + (self.dna_length - len(dna)) * "m"
+            dna_ids.append(self.dna_tokenizer(dna))
 
             protein_ids.append(
                 self.protein_feature.loc[
                     self.protein_feature["Entry"] == example["protein"], "protein_id"
-                ]
+                ].item()
             )
             second_ids.append(
                 self.protein_feature.loc[
                     self.protein_feature["Entry"] == example["protein"], "second_id"
-                ]
+                ].item()
             )
 
             if output_label:
@@ -116,22 +121,22 @@ class DataCollator:
 
         protein_ids = torch.from_numpy(np.stack(protein_ids))
         second_ids = torch.from_numpy(np.stack(second_ids))
-        DNA_ids = torch.from_numpy(np.stack(DNA_ids))
+        dna_ids = torch.from_numpy(np.stack(dna_ids))
         if output_label:
             return {
                 "input": {
                     "protein_id": protein_ids,
                     "second_id": second_ids,
-                    "DNA_id": DNA_ids,
+                    "dna_id": dna_ids,
                 },
                 "label": {
-                    "bind": torch.tensor(binds),
+                    "bind": torch.tensor(binds, dtype=torch.float32),
                 },
             }
         return {
             "input": {
                 "protein_id": protein_ids,
                 "second_id": second_ids,
-                "DNA_id": DNA_ids,
+                "dna_id": dna_ids,
             },
         }

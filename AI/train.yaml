@@ -1,7 +1,7 @@
 train:
   # output_dir:
   # trial_name:
-  batch_size: 100
+  batch_size: 400
   num_epochs: 33
   last_epoch: -1
   clip_value: 1.0
