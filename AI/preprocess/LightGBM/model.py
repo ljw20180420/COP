@@ -154,7 +154,7 @@ class LightGBM(MyModelAbstract):
         eval_dataloader: torch.utils.data.DataLoader,
         my_generator: MyGenerator,
         metrics: dict,
-    ):
+    ) -> tuple:
         if not hasattr(self, "eval_data"):
             X_eval, y_eval = [], []
             for examples in tqdm(eval_dataloader):
