@@ -15,11 +15,6 @@ class MLBase(MyModelAbstract):
     ) -> None:
         pass
 
-    def eval_output(
-        self, examples: list[dict], batch: dict, my_generator: MyGenerator
-    ) -> pd.DataFrame:
-        pass
-
     def _get_feature(
         self,
         input: dict,
