@@ -56,9 +56,7 @@ class SKBase(MLBase):
             label=None,
         )
         batch_size = X_value.shape[0]
-        probas = special.expit(
-            self.classifier.decision_function(X=X_value),
-        )
+        probas = self.predict_proba(X_value)
         df = pd.DataFrame(
             {
                 "sample_idx": np.arange(batch_size),
@@ -100,15 +98,8 @@ class SKBase(MLBase):
 
             self.classifier.partial_fit(X=X_value, y=y_value)
 
-            score = self.classifier.decision_function(X=X_value)
-            train_loss += -(
-                (np.ma.log(special.expit(score)).filled(-1000) * y_value).sum().item()
-            )
-            train_loss += -(
-                (np.ma.log(special.expit(-score)).filled(-1000) * (1 - y_value))
-                .sum()
-                .item()
-            )
+            log_probas = self.predict_log_proba(X_value)
+            train_loss += -(log_probas[np.arange(len(y_value)), y_value].sum().item())
             train_loss_num += X_value.shape[0]
 
         return train_loss, train_loss_num, float("nan")
@@ -152,3 +143,18 @@ class SKBase(MLBase):
             metric_loss_dict[metric_name] = metric_fun.epoch()
 
         return eval_loss, eval_loss_num, metric_loss_dict
+
+
+class SKLinearBase(SKBase):
+    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+        return special.expit(self.classifier.decision_function(X=X_value))
+
+    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+        score = self.classifier.decision_function(X=X_value)
+        return np.stack(
+            [
+                np.ma.log(special.expit(-score)).filled(-1000),
+                np.ma.log(special.expit(score)).filled(-1000),
+            ],
+            axis=1,
+        )

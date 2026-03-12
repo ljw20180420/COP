@@ -4,16 +4,26 @@ from typing import Literal, Optional
 from sklearn import linear_model
 
 from ..data_collator import DataCollator
-from ..model import SKBase
+from ..model import SKLinearBase
 
 
-class SGDClassifier(SKBase):
+class SGDClassifier(SKLinearBase):
     def __init__(
         self,
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
-        loss: Literal["log_loss", "modified_huber"],
+        loss: Literal[
+            "hinge",
+            "log_loss",
+            "modified_huber",
+            "squared_hinge",
+            "perceptron",
+            "squared_error",
+            "huber",
+            "epsilon_insensitive",
+            "squared_epsilon_insensitive",
+        ],
         penalty: Optional[Literal["l2", "l1", "elasticnet"]],
         alpha: float,
         l1_ratio: float,

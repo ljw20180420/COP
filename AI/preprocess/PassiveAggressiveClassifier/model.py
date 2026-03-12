@@ -1,13 +1,13 @@
 import os
-from typing import Literal, Optional
+from typing import Literal
 
 from sklearn import linear_model
 
 from ..data_collator import DataCollator
-from ..model import SKBase
+from ..model import SKLinearBase
 
 
-class PassiveAggressiveClassifier(SKBase):
+class PassiveAggressiveClassifier(SKLinearBase):
     def __init__(
         self,
         protein_feature: os.PathLike,

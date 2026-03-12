@@ -4,10 +4,10 @@ from typing import Literal, Optional
 from sklearn import linear_model
 
 from ..data_collator import DataCollator
-from ..model import SKBase
+from ..model import SKLinearBase
 
 
-class Perceptron(SKBase):
+class Perceptron(SKLinearBase):
     def __init__(
         self,
         protein_feature: os.PathLike,
