@@ -15,7 +15,8 @@ output_dir=${OUTPUT_DIR:-$HOME"/MOTIF_results"}/formal/default
 data_name=mouse_C2H2
 
 for pre_model in \
-    COP:COP
+    COP:COP \
+    LightGBM:LightGBM
 do
     title ${pre_model}
 

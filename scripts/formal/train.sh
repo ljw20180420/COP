@@ -14,7 +14,8 @@ train_config=AI/train.yaml
 output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/default
 
 for pre_model in \
-    COP:COP
+    COP:COP \
+    LightGBM:LightGBM
 do
     title ${pre_model}
 
