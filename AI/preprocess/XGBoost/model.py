@@ -9,16 +9,16 @@ import torch
 import xgboost as xgb
 from common_ai.generator import MyGenerator
 from common_ai.initializer import MyInitializer
-from common_ai.model import MyModelAbstract
 from common_ai.optimizer import MyOptimizer
 from common_ai.profiler import MyProfiler
 from common_ai.train import MyTrain
 from tqdm import tqdm
 
 from ..data_collator import DataCollator
+from ..model import MLBase
 
 
-class XGBoost(MyModelAbstract):
+class XGBoost(MLBase):
     def __init__(
         self,
         protein_feature: os.PathLike,
@@ -52,11 +52,6 @@ class XGBoost(MyModelAbstract):
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.booster = None
-
-    def my_initialize_model(
-        self, my_initializer: MyInitializer, my_generator: MyGenerator
-    ) -> None:
-        pass
 
     def eval_output(
         self, examples: list[dict], batch: dict, my_generator: MyGenerator
@@ -198,27 +193,3 @@ class XGBoost(MyModelAbstract):
             metric_loss_dict[metric_name] = metric_fun.epoch()
 
         return eval_loss, self.Xy_eval.num_row(), metric_loss_dict
-
-    def _get_feature(
-        self,
-        input: dict,
-        label: Optional[dict],
-    ) -> tuple[np.ndarray]:
-        X_value = np.concatenate(
-            (
-                input["dna_id"].cpu().numpy(),
-                input["protein_id"].cpu().numpy(),
-                input["second_id"].cpu().numpy(),
-            ),
-            axis=1,
-        )
-
-        if label is not None:
-            y_value = label["bind"].cpu().numpy()
-            return X_value, y_value
-
-        return X_value
-
-    @classmethod
-    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
-        pass
