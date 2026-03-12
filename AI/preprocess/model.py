@@ -3,6 +3,7 @@ from typing import Optional
 import jsonargparse
 import numpy as np
 import optuna
+import pandas as pd
 from common_ai.generator import MyGenerator
 from common_ai.initializer import MyInitializer
 from common_ai.model import MyModelAbstract
@@ -12,6 +13,11 @@ class MLBase(MyModelAbstract):
     def my_initialize_model(
         self, my_initializer: MyInitializer, my_generator: MyGenerator
     ) -> None:
+        pass
+
+    def eval_output(
+        self, examples: list[dict], batch: dict, my_generator: MyGenerator
+    ) -> pd.DataFrame:
         pass
 
     def _get_feature(
