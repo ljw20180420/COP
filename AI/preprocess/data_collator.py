@@ -14,9 +14,6 @@ class DataCollator:
         protein_length: int,
         dna_length: int,
     ):
-        self.protein_feature = pd.read_csv(
-            protein_feature, header=0, na_filter=False
-        ).drop(columns=["Reviewed", "Entry Name", "disorder"])
         self.protein_length = protein_length
         self.dna_length = dna_length
 
@@ -45,11 +42,14 @@ class DataCollator:
 
         protein_ids = []
         second_ids = []
+        protein_feature = pd.read_csv(protein_feature, header=0, na_filter=False).drop(
+            columns=["Reviewed", "Entry Name", "disorder"]
+        )
         for protein, second, zinc_fns, krabs in zip(
-            self.protein_feature["sequence"],
-            self.protein_feature["secondary_structure"],
-            self.protein_feature["zinc_finger"],
-            self.protein_feature["KRAB"],
+            protein_feature["sequence"],
+            protein_feature["secondary_structure"],
+            protein_feature["zinc_finger"],
+            protein_feature["KRAB"],
         ):
             assert len(protein) == len(
                 second
@@ -85,15 +85,17 @@ class DataCollator:
             protein_ids.append(self.protein_tokenizer(protein))
             second_ids.append(self.second_tokenizer(second))
 
-        self.protein_feature = self.protein_feature.assign(
-            protein_id=protein_ids,
-            second_id=second_ids,
+        self.protein_ids = pd.DataFrame(
+            data=np.stack(protein_ids), index=protein_feature["Entry"]
+        )
+        self.second_ids = pd.DataFrame(
+            data=np.stack(second_ids), index=protein_feature["Entry"]
         )
 
     def __call__(
         self, examples: list[dict], output_label: bool, my_generator: MyGenerator
     ):
-        protein_ids, second_ids, dna_ids = [], [], []
+        proteins, dna_ids = [], []
         if output_label:
             binds = []
         for example in examples:
@@ -105,22 +107,13 @@ class DataCollator:
                 dna = "c" + dna + (self.dna_length - len(dna)) * "m"
             dna_ids.append(self.dna_tokenizer(dna))
 
-            protein_ids.append(
-                self.protein_feature.loc[
-                    self.protein_feature["Entry"] == example["protein"], "protein_id"
-                ].item()
-            )
-            second_ids.append(
-                self.protein_feature.loc[
-                    self.protein_feature["Entry"] == example["protein"], "second_id"
-                ].item()
-            )
+            proteins.append(example["protein"])
 
             if output_label:
                 binds.append(example["bind"])
 
-        protein_ids = torch.from_numpy(np.stack(protein_ids))
-        second_ids = torch.from_numpy(np.stack(second_ids))
+        protein_ids = torch.from_numpy(self.protein_ids.loc[proteins, :].to_numpy())
+        second_ids = torch.from_numpy(self.second_ids.loc[proteins, :].to_numpy())
         dna_ids = torch.from_numpy(np.stack(dna_ids))
         if output_label:
             return {
