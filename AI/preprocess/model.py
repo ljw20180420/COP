@@ -1,4 +1,5 @@
 import pickle
+from abc import abstractmethod
 from typing import Optional
 
 import jsonargparse
@@ -143,6 +144,14 @@ class SKBase(MLBase):
             metric_loss_dict[metric_name] = metric_fun.epoch()
 
         return eval_loss, eval_loss_num, metric_loss_dict
+
+    @abstractmethod
+    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+        pass
 
 
 class SKLinearBase(SKBase):
