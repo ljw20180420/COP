@@ -35,7 +35,7 @@ class SGDClassifier(SKBase):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
-            loss: the loos function to be used.
+            loss: the loss function to be used.
             penalty: regularization type among l2, l1, l2/l1 (elasticnet), None.
             alpha: constant that multiplies the penalty term, controlling regularization strength.
             l1_ratio: ratio of l1 regularization, only relevant for elasticnet.

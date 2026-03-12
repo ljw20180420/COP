@@ -1,0 +1,7 @@
+class_path: AI.preprocess.PassiveAggressiveClassifier.model.PassiveAggressiveClassifier
+init_args:
+  protein_feature: AI/dataset/protein_feature.csv
+  protein_length: 200
+  dna_length: 100
+  loss: hinge # hinge, squared_hinge
+  random_state: 63036
