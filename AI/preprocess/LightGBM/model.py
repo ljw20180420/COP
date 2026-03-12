@@ -56,7 +56,7 @@ class LightGBM(MyModelAbstract):
 
     def my_initialize_model(
         self, my_initializer: MyInitializer, my_generator: MyGenerator
-    ):
+    ) -> None:
         pass
 
     def eval_output(
@@ -100,33 +100,27 @@ class LightGBM(MyModelAbstract):
         my_generator: MyGenerator,
         my_optimizer: MyOptimizer,
         my_profiler: MyProfiler,
-    ):
+    ) -> tuple:
         if not hasattr(self, "train_data"):
-            X_train, y_train, feature_name = [], [], None
+            X_train, y_train = [], []
             for examples in tqdm(train_dataloader):
                 batch = self.data_collator(
                     examples, output_label=True, my_generator=my_generator
                 )
-                if feature_name is None:
-                    feature_name = (
-                        [f"d{i}" for i in range(batch["dna_id"].shape[-1])]
-                        + [f"p{i}" for i in range(batch["protein_id"].shape[-1])]
-                        + [f"s{i}" for i in range(batch["second_id"].shape[-1])]
-                    )
 
                 X_value, y_value = self._get_feature(
                     input=batch["input"], label=batch["label"]
                 )
                 X_train.append(X_value)
                 y_train.append(y_value)
+
             X_train = np.concatenate(X_train)
             y_train = np.concatenate(y_train)
 
             self.train_data = lgb.Dataset(
                 data=X_train,
                 label=y_train,
-                feature_name=feature_name,
-                categorical_feature=feature_name,
+                categorical_feature=list(range(X_train.shape[-1])),
             )
 
         eval_result = {}
@@ -149,8 +143,8 @@ class LightGBM(MyModelAbstract):
         )
 
         return (
-            eval_result["train"]["mlogloss"][0] * len(self.train_data.label),
-            len(self.train_data.label),
+            eval_result["train"]["logloss"][0] * self.train_data.num_data(),
+            self.train_data.num_data(),
             float("nan"),
         )
 
@@ -162,17 +156,11 @@ class LightGBM(MyModelAbstract):
         metrics: dict,
     ):
         if not hasattr(self, "eval_data"):
-            X_eval, y_eval, feature_name = [], [], None
+            X_eval, y_eval = [], []
             for examples in tqdm(eval_dataloader):
                 batch = self.data_collator(
                     examples, output_label=True, my_generator=my_generator
                 )
-                if feature_name is None:
-                    feature_name = (
-                        [f"d{i}" for i in range(batch["dna_id"].shape[-1])]
-                        + [f"p{i}" for i in range(batch["protein_id"].shape[-1])]
-                        + [f"s{i}" for i in range(batch["second_id"].shape[-1])]
-                    )
 
                 X_value, y_value = self._get_feature(
                     input=batch["input"], label=batch["label"]
@@ -186,12 +174,12 @@ class LightGBM(MyModelAbstract):
             self.eval_data = lgb.Dataset(
                 data=X_eval,
                 label=y_eval,
-                feature_name=feature_name,
-                categorical_feature=feature_name,
+                categorical_feature=list(range(X_eval.shape[-1])),
             )
 
-        eval_loss = self.booster.eval(data=self.eval_data, name="eval")[2] * len(
-            self.eval_data.label
+        eval_loss = (
+            self.booster.eval(data=self.eval_data, name="eval")[2]
+            * self.eval_data.num_data()
         )
         for examples in tqdm(eval_dataloader):
             batch = self.data_collator(
@@ -209,7 +197,7 @@ class LightGBM(MyModelAbstract):
         for metric_name, metric_fun in metrics.items():
             metric_loss_dict[metric_name] = metric_fun.epoch()
 
-        return eval_loss, len(self.eval_data.label), metric_loss_dict
+        return eval_loss, self.eval_data.num_data(), metric_loss_dict
 
     def _get_feature(
         self,

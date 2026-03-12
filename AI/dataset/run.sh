@@ -332,7 +332,7 @@ generate_small_data() {
     title "generate small data"
     local accessions=()
     collect_accession accessions
-    local small_line_num=3000
+    local small_line_num=300
     scripts/generate_small_data.py ${small_line_num} "${accessions[@]}"
 }
 
@@ -401,8 +401,8 @@ generate_inference_data() {
 
 # get_protein_pairwise_closest_peak_distance
 
-# generate_small_data
+generate_small_data
 
-# split_and_balance_small_data
+split_and_balance_small_data
 
-generate_inference_data
+# generate_inference_data
