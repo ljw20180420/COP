@@ -19,20 +19,14 @@ df = pd.read_table(
     na_filter=False,
 )
 
-df = (
-    df.merge(
-        right=pd.read_csv("secondary_structure.csv", header=0, na_filter=False),
-        left_on="Entry",
-        right_on="accession",
-        how="left",
-    )
-    .drop(columns="accession")
-    .fillna("")
-)
+df = df.merge(
+    right=pd.read_csv("secondary_structure.csv", header=0, na_filter=False),
+    left_on="Entry",
+    right_on="accession",
+    how="inner",
+).drop(columns="accession")
 
-# This is valid because pandas will align index.
-df.loc[df["sequence"] == "", "sequence"] = df["Sequence"]
-df = df.drop(columns="Sequence")
+df = df.query("Sequence == sequence").reset_index(drop=True).drop(columns="Sequence")
 df["secondary_structure"] = df.apply(
     lambda x: (
         len(x["sequence"]) * "-"

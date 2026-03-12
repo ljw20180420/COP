@@ -401,8 +401,8 @@ generate_inference_data() {
 
 # get_protein_pairwise_closest_peak_distance
 
-generate_small_data
+# generate_small_data
 
-split_and_balance_small_data
+# split_and_balance_small_data
 
 # generate_inference_data
