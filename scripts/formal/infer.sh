@@ -12,6 +12,7 @@ title() {
 
 infer_config=AI/infer.yaml
 output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/default
+data_name=mouse_C2H2
 
 for pre_model in \
     COP:COP \
@@ -24,5 +25,5 @@ do
     logs_path=${output_dir}/logs/${preprocess}/${model_cls}/${data_name}/default
 
     title Infer
-    ./run.py infer --config ${infer_config} --test.checkpoints_path ${checkpoints_path} --test.logs_path ${logs_path}
+    ./run.py infer --config ${infer_config} --output ${logs_path}/inference_output.csv --test.checkpoints_path ${checkpoints_path} --test.logs_path ${logs_path}
 done
