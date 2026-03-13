@@ -355,15 +355,15 @@ generate_inference_data() {
     printf "DNA,protein\n" > inference_data.csv
     paste -d, \
         <(
-            tail -n+2 \
-                protein_feature.csv |
-            cut -d, -f1 | shuf -n ${number} -r
-        ) \
-        <(
             for (( i=0; i<${number}; ++i ))
             do
                 echo $(random_DNA ${seq_len})
             done
+        ) \
+        <(
+            tail -n+2 \
+                protein_feature.csv |
+            cut -d, -f1 | shuf -n ${number} -r
         ) \
         >> inference_data.csv
 }
@@ -394,8 +394,8 @@ generate_inference_data() {
 
 # get_protein_pairwise_closest_peak_distance
 
-generate_small_data
+# generate_small_data
 
-split_and_balance_small_data
+# split_and_balance_small_data
 
-# generate_inference_data
+generate_inference_data
