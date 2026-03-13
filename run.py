@@ -35,7 +35,12 @@ elif cfg.subcommand == "test":
     epoch = MyTest(**cfg.test.as_dict())(train_parser)
 
 elif cfg.subcommand == "infer":
-    MyInference(**cfg.infer.inference.init_args.as_dict())(
+    params = (
+        {}
+        if not hasattr(cfg.infer.inference, "init_args")
+        else cfg.infer.inference.init_args.as_dict()
+    )
+    MyInference(**params)(
         infer_df=pd.read_csv(cfg.infer.input),
         test_cfg=cfg.infer.test,
         train_parser=train_parser,
