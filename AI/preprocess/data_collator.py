@@ -112,8 +112,12 @@ class DataCollator:
             if output_label:
                 binds.append(example["bind"])
 
-        protein_ids = torch.from_numpy(self.protein_ids.loc[proteins, :].to_numpy())
-        second_ids = torch.from_numpy(self.second_ids.loc[proteins, :].to_numpy())
+        protein_ids = torch.from_numpy(
+            self.protein_ids.loc[proteins, :].to_numpy().copy()
+        )
+        second_ids = torch.from_numpy(
+            self.second_ids.loc[proteins, :].to_numpy().copy()
+        )
         dna_ids = torch.from_numpy(np.stack(dna_ids))
         if output_label:
             return {
