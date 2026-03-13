@@ -27,7 +27,7 @@ class F1Metric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.f1.compute(
@@ -61,7 +61,7 @@ class AccuracyMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.accuracy.compute(
@@ -95,7 +95,7 @@ class RecallMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.recall.compute(
@@ -129,7 +129,7 @@ class PrecisionMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.precision.compute(
@@ -165,7 +165,7 @@ class MatthewsCorrelationMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.matthews_correlation.compute(
@@ -197,11 +197,11 @@ class RocAucMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.roc_auc.compute(
-            predictions=np.concatenate(self.probas),
+            prediction_scores=np.concatenate(self.probas),
             references=np.concatenate(self.binds),
         )
         self.probas = []
@@ -224,7 +224,7 @@ class PrAucMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = average_precision_score(
@@ -256,7 +256,7 @@ class BrierScoreMetric(MyMetricAbstract):
 
     def step(self, df: pd.DataFrame, examples: list, batch: dict):
         self.probas.append(df["proba"].to_numpy())
-        self.binds.append(batch["label"]["bind"].to_numpy())
+        self.binds.append(batch["label"]["bind"].numpy())
 
     def epoch(self):
         results = self.brier_score.compute(
