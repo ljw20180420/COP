@@ -107,39 +107,9 @@ class LightGBM(MLBase):
                 data=X_train,
                 label=y_train,
                 categorical_feature=list(range(X_train.shape[-1])),
+                free_raw_data=False,
             )
 
-        eval_result = {}
-        self.booster = lgb.train(
-            params={
-                "device": self.device,
-                "eta": self.eta,
-                "objective": "binary",
-                "seed": my_generator.seed,
-            },
-            train_set=self.train_data,
-            num_boost_round=self.num_boost_round,
-            valid_sets=[self.train_data],
-            valid_names=["train"],
-            init_model=self.booster,
-            keep_training_booster=True,
-            callbacks=[lgb.record_evaluation(eval_result)],
-        )
-
-        return (
-            np.mean(eval_result["train"]["binary_logloss"]).item()
-            * self.train_data.num_data(),
-            self.train_data.num_data(),
-            float("nan"),
-        )
-
-    def my_eval_epoch(
-        self,
-        my_train: MyTrain,
-        eval_dataloader: torch.utils.data.DataLoader,
-        my_generator: MyGenerator,
-        metrics: dict,
-    ) -> tuple:
         if not hasattr(self, "eval_data"):
             X_eval, y_eval = [], []
             for examples in tqdm(eval_dataloader):
@@ -161,8 +131,40 @@ class LightGBM(MLBase):
                 label=y_eval,
                 reference=self.train_data,
                 categorical_feature=list(range(X_eval.shape[-1])),
+                free_raw_data=False,
             )
 
+        eval_result = {}
+        self.booster = lgb.train(
+            params={
+                "device": self.device,
+                "eta": self.eta,
+                "objective": "binary",
+                "seed": my_generator.seed,
+            },
+            train_set=self.train_data,
+            num_boost_round=self.num_boost_round,
+            valid_sets=[self.train_data, self.eval_data],
+            valid_names=["train", "eval"],
+            init_model=self.booster,
+            keep_training_booster=True,
+            callbacks=[lgb.record_evaluation(eval_result)],
+        )
+
+        return (
+            np.mean(eval_result["train"]["binary_logloss"]).item()
+            * self.train_data.num_data(),
+            self.train_data.num_data(),
+            float("nan"),
+        )
+
+    def my_eval_epoch(
+        self,
+        my_train: MyTrain,
+        eval_dataloader: torch.utils.data.DataLoader,
+        my_generator: MyGenerator,
+        metrics: dict,
+    ) -> tuple:
         eval_loss = (
             self.booster.eval(data=self.eval_data, name="eval")[0][2].item()
             * self.eval_data.num_data()
