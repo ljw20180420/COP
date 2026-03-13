@@ -169,7 +169,7 @@ class LightGBM(MLBase):
             self.booster.eval(data=self.eval_data, name="eval")[0][2].item()
             * self.eval_data.num_data()
         )
-        for examples in tqdm(eval_dataloader):
+        for examples in eval_dataloader:
             batch = self.data_collator(
                 examples, output_label=True, my_generator=my_generator
             )
