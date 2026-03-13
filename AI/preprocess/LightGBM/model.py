@@ -25,9 +25,6 @@ class LightGBM(MLBase):
         protein_length: int,
         dna_length: int,
         eta: float,
-        max_depth: int,
-        subsample: float,
-        reg_lambda: float,
         num_boost_round: int,
     ) -> None:
         """LigtGBM arguments.
@@ -37,17 +34,11 @@ class LightGBM(MLBase):
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
             eta: Shrink of step size after each round.
-            max_depth: maximum depth of a tree.
-            subsample: subsample ratio of the training instances.
-            reg_lambda: L2 regularization term on weights.
             num_boost_round: Number of trees generated in single epochs.
         """
         super().__init__()
 
         self.eta = eta
-        self.max_depth = max_depth
-        self.subsample = subsample
-        self.reg_lambda = reg_lambda
         self.num_boost_round = num_boost_round
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
@@ -123,9 +114,6 @@ class LightGBM(MLBase):
             params={
                 "device": self.device,
                 "eta": self.eta,
-                "max_depth": self.max_depth,
-                "subsample": self.subsample,
-                "reg_lambda": self.reg_lambda,
                 "objective": "binary",
                 "seed": my_generator.seed,
             },
@@ -134,11 +122,13 @@ class LightGBM(MLBase):
             valid_sets=[self.train_data],
             valid_names=["train"],
             init_model=self.booster,
+            keep_training_booster=True,
             callbacks=[lgb.record_evaluation(eval_result)],
         )
 
         return (
-            eval_result["train"]["logloss"][0] * self.train_data.num_data(),
+            np.mean(eval_result["train"]["binary_logloss"]).item()
+            * self.train_data.num_data(),
             self.train_data.num_data(),
             float("nan"),
         )
@@ -169,11 +159,12 @@ class LightGBM(MLBase):
             self.eval_data = lgb.Dataset(
                 data=X_eval,
                 label=y_eval,
+                reference=self.train_data,
                 categorical_feature=list(range(X_eval.shape[-1])),
             )
 
         eval_loss = (
-            self.booster.eval(data=self.eval_data, name="eval")[2]
+            self.booster.eval(data=self.eval_data, name="eval")[0][2].item()
             * self.eval_data.num_data()
         )
         for examples in tqdm(eval_dataloader):
