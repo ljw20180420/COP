@@ -27,3 +27,4 @@ AI_models/DeepZF/Results
 AI_models/DeepZF/zinc_finger_protein_motifs
 AI_models/bind_transformer/config_custom.ini
 *.bak
+/paper/benchmark
