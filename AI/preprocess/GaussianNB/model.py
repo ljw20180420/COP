@@ -21,8 +21,6 @@ class GaussianNB(SKBase):
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
         """
-        super().__init__()
-
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = naive_bayes.GaussianNB()

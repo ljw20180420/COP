@@ -25,8 +25,6 @@ class PassiveAggressiveClassifier(SKLinearBase):
             loss: the loss function to be used.
             random_state: use for shuffling data.
         """
-        super().__init__()
-
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = linear_model.PassiveAggressiveClassifier(

@@ -29,8 +29,6 @@ class Perceptron(SKLinearBase):
             l1_ratio: ratio of l1 regularization, only relevant for elasticnet.
             random_state: use for shuffling data.
         """
-        super().__init__()
-
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = linear_model.Perceptron(
