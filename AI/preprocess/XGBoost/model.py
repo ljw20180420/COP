@@ -187,7 +187,7 @@ class XGBoost(MLBase):
         return eval_loss, self.Xy_eval.num_row(), metric_loss_dict
 
 
-class RandomForeset(XGBoost):
+class RandomForest(XGBoost):
     # https://xgboost.readthedocs.io/en/stable/tutorials/rf.html
 
     def __init__(
@@ -197,7 +197,7 @@ class RandomForeset(XGBoost):
         dna_length: int,
         num_parallel_tree: int,
     ):
-        """RandomForeset arguments.
+        """RandomForest arguments.
 
         Args:
             protein_feature: file contains info for mouse C2H2 zinc fingers.
@@ -234,7 +234,7 @@ class RandomForeset(XGBoost):
         return evals_result
 
 
-class DecisionTree(RandomForeset):
+class DecisionTree(RandomForest):
     def __init__(
         self,
         protein_feature: os.PathLike,

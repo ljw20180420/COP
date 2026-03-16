@@ -1,0 +1,6 @@
+class_path: AI.preprocess.XGBoost.model.RandomForest
+init_args:
+  protein_feature: AI/dataset/protein_feature.csv
+  protein_length: 200
+  dna_length: 100
+  num_parallel_tree: 30

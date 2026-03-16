@@ -1,0 +1,5 @@
+class_path: AI.preprocess.XGBoost.model.DecisionTree
+init_args:
+  protein_feature: AI/dataset/protein_feature.csv
+  protein_length: 200
+  dna_length: 100
