@@ -94,6 +94,7 @@ mpl.rcParams["ps.fonttype"] = 42
 
 preprocess_model_cls_pairs = [
     ("LightGBM", "LightGBM"),
+    ("XGBoost", "XGBoost"),
 ]
 data_names = ["mouse_C2H2"]
 metrics = [

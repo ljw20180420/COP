@@ -36,8 +36,6 @@ class LightGBM(MLBase):
             eta: Shrink of step size after each round.
             num_boost_round: Number of trees generated in single epochs.
         """
-        super().__init__()
-
         self.eta = eta
         self.num_boost_round = num_boost_round
 

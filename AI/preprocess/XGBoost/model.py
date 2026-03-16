@@ -36,7 +36,6 @@ class XGBoost(MLBase):
             eta: Shrink of step size after each round.
             num_boost_round: Number of trees generated in single epochs.
         """
-        super().__init__()
         self.eta = eta
         self.num_boost_round = num_boost_round
 
@@ -78,6 +77,24 @@ class XGBoost(MLBase):
             model_file=bytearray(state_dict["booster"].numpy().tobytes())
         )
 
+    def _train_booster(self, my_generator: MyGenerator) -> dict:
+        evals_result = {}
+        self.booster = xgb.train(
+            params={
+                "device": self.device,
+                "eta": self.eta,
+                "objective": "binary:logistic",
+                "seed": my_generator.seed,
+            },
+            dtrain=self.Xy_train,
+            num_boost_round=self.num_boost_round,
+            evals=[(self.Xy_train, "train")],
+            evals_result=evals_result,
+            xgb_model=self.booster,
+        )
+
+        return evals_result
+
     def my_train_epoch(
         self,
         my_train: MyTrain,
@@ -109,20 +126,7 @@ class XGBoost(MLBase):
                 enable_categorical=True,
             )
 
-        evals_result = {}
-        self.booster = xgb.train(
-            params={
-                "device": self.device,
-                "eta": self.eta,
-                "objective": "binary:logistic",
-                "seed": my_generator.seed,
-            },
-            dtrain=self.Xy_train,
-            num_boost_round=self.num_boost_round,
-            evals=[(self.Xy_train, "train")],
-            evals_result=evals_result,
-            xgb_model=self.booster,
-        )
+        evals_result = self._train_booster(my_generator)
 
         return (
             np.mean(evals_result["train"]["logloss"]).item() * self.Xy_train.num_row(),
@@ -181,3 +185,69 @@ class XGBoost(MLBase):
             metric_loss_dict[metric_name] = metric_fun.epoch()
 
         return eval_loss, self.Xy_eval.num_row(), metric_loss_dict
+
+
+class RandomForeset(XGBoost):
+    # https://xgboost.readthedocs.io/en/stable/tutorials/rf.html
+
+    def __init__(
+        self,
+        protein_feature: os.PathLike,
+        protein_length: int,
+        dna_length: int,
+        num_parallel_tree: int,
+    ):
+        """RandomForeset arguments.
+
+        Args:
+            protein_feature: file contains info for mouse C2H2 zinc fingers.
+            protein_length: maximally allowed protein length.
+            dna_length: maximally allowed DNA length.
+            num_parallel_tree: the size of the forest being trained.
+        """
+        self.num_parallel_tree = num_parallel_tree
+
+        self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
+
+        self.booster = None
+
+    def _train_booster(self, my_generator: MyGenerator) -> dict:
+        evals_result = {}
+        self.booster = xgb.train(
+            params={
+                "booster": "gbtree",
+                "subsample": 0.8,
+                "colsample_bynode": 0.8,
+                "num_parallel_tree": self.num_parallel_tree,
+                "eta": 1,
+                "device": self.device,
+                "objective": "binary:logistic",
+                "seed": my_generator.seed,
+            },
+            dtrain=self.Xy_train,
+            num_boost_round=1,
+            evals=[(self.Xy_train, "train")],
+            evals_result=evals_result,
+            xgb_model=self.booster,
+        )
+
+        return evals_result
+
+
+class DecisionTree(RandomForeset):
+    def __init__(
+        self,
+        protein_feature: os.PathLike,
+        protein_length: int,
+        dna_length: int,
+    ):
+        """DecisionTree arguments.
+
+        Args:
+            protein_feature: file contains info for mouse C2H2 zinc fingers.
+            protein_length: maximally allowed protein length.
+            dna_length: maximally allowed DNA length.
+        """
+        super().__init__(
+            protein_feature, protein_length, dna_length, num_parallel_tree=1
+        )
