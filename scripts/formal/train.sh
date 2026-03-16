@@ -23,5 +23,33 @@ do
     model_config=AI/preprocess/${preprocess}/${model_cls}.yaml
 
     title Train
-    ./run.py train --config ${train_config} --train.output_dir ${output_dir} --train.trial_name default --train.evaluation_only false --model ${model_config}
+    case ${model_cls} in
+        XGBoost|LightGBM)
+            ./run.py train \
+                --config ${train_config} \
+                --train.output_dir ${output_dir} \
+                --train.trial_name default \
+                --train.evaluation_only false \
+                --train.device cpu \
+                --model ${model_config}
+        ;;
+        RandomForest|DecisionTree)
+            ./run.py train \
+                --config ${train_config} \
+                --train.output_dir ${output_dir} \
+                --train.trial_name default \
+                --train.num_epochs 1 \
+                --train.evaluation_only false \
+                --train.device cpu \
+                --model ${model_config}
+        ;;
+        *)
+            ./run.py train \
+                --config ${train_config} \
+                --train.output_dir ${output_dir} \
+                --train.trial_name default \
+                --train.evaluation_only false \
+                --model ${model_config}
+        ;;
+    esac
 done
