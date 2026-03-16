@@ -125,7 +125,7 @@ class XGBoost(MLBase):
         )
 
         return (
-            evals_result["train"]["logloss"][0] * self.Xy_train.num_row(),
+            np.mean(evals_result["train"]["logloss"]).item() * self.Xy_train.num_row(),
             self.Xy_train.num_row(),
             float("nan"),
         )

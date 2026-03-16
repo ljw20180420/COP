@@ -3,9 +3,8 @@
 import os
 import pathlib
 
-import numpy as np
 import pandas as pd
-from common_ai.config import get_config, get_train_parser
+from common_ai.config import get_config
 from common_ai.test import MyTest
 from common_ai.train import MyTrain
 
