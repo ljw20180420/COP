@@ -1,6 +1,5 @@
 # TODO
 
-- Distribute traditional model into LightGBM, XGBoost, Scikit
 - Replace huggingface evaluation by scikit-learn metrics for offline usage.
 - Apply incremental learning of scikit-learn.
 - Use the method at [XGBoost](https://xgboost.readthedocs.io/en/stable/tutorials/c_api_tutorial.html#install-xgboost-on-conda-environment) to install dssp in project conda.
