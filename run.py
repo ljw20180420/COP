@@ -3,6 +3,7 @@
 import os
 import pathlib
 
+import jsonargparse
 import pandas as pd
 from common_ai.config import get_config
 from common_ai.test import MyTest
@@ -34,13 +35,12 @@ elif cfg.subcommand == "test":
     epoch = MyTest(**cfg.test.as_dict())(train_parser)
 
 elif cfg.subcommand == "infer":
-    params = (
-        {}
-        if not hasattr(cfg.infer.inference, "init_args")
-        else cfg.infer.inference.init_args.as_dict()
-    )
-    MyInference(**params)(
+    MyInference(
+        **cfg.infer.inference.get("init_args", jsonargparse.Namespace()).as_dict()
+    )(
         infer_df=pd.read_csv(cfg.infer.input),
         test_cfg=cfg.infer.test,
         train_parser=train_parser,
-    ).to_csv(cfg.infer.output, index=False)
+    ).to_csv(
+        cfg.infer.output, index=False
+    )
