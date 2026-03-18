@@ -1,4 +1,4 @@
-class_path: AI.preprocess.SGDClassifier.model.SGDClassifier
+class_path: AI.preprocess.Scikit.model.SGDClassifier
 init_args:
   protein_feature: AI/dataset/protein_feature.csv
   protein_length: 200
