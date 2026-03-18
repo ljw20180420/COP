@@ -13,7 +13,7 @@ class DataCollator:
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
-    ):
+    ) -> None:
         self.protein_length = protein_length
         self.dna_length = dna_length
 
@@ -94,7 +94,7 @@ class DataCollator:
 
     def __call__(
         self, examples: list[dict], output_label: bool, my_generator: MyGenerator
-    ):
+    ) -> dict[str, dict]:
         proteins, dna_ids = [], []
         if output_label:
             binds = []
