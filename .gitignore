@@ -20,7 +20,6 @@ tmp_b_c.txt
 /AI/dataset/inference_data.csv
 /AI/dataset/extra/data
 /DeepZF/Data
-/DeepZF/BindZF_predictor/code/model.p
 /DeepZF/Results
 /DeepZF/zinc_finger_protein_motifs
 /paper/benchmark

@@ -1,1 +1,2 @@
 AI/preprocess/epoch_92400_sample_23500000.pkl filter=lfs diff=lfs merge=lfs -text
+DeepZF/BindZF_predictor/code/model.p filter=lfs diff=lfs merge=lfs -text
