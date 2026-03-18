@@ -12,6 +12,7 @@ from common_ai.profiler import MyProfiler
 from common_ai.train import MyTrain
 from scipy import special
 from sklearn import linear_model, naive_bayes
+from sklearn.preprocessing import OneHotEncoder
 from tqdm import tqdm
 
 from ..data_collator import DataCollator
@@ -19,6 +20,11 @@ from ..model import MLBase
 
 
 class SKBase(MLBase):
+    def __init__(self):
+        self.dna_onehot_encoder = OneHotEncoder().fit([[i] for i in range(7)])
+        self.protein_onehot_encoder = OneHotEncoder().fit([[i] for i in range(26)])
+        self.second_onehot_encoder = OneHotEncoder().fit([[i] for i in range(12)])
+
     def eval_output(
         self, examples: list[dict], batch: dict, my_generator: MyGenerator
     ) -> pd.DataFrame:
@@ -112,6 +118,36 @@ class SKBase(MLBase):
 
         return eval_loss, eval_loss_num, metric_loss_dict
 
+    def _get_feature(
+        self,
+        input: dict,
+        label: Optional[dict],
+    ) -> tuple[np.ndarray]:
+        dna_ids = input["dna_id"].cpu().numpy()
+        protein_ids = input["protein_id"].cpu().numpy()
+        second_ids = input["second_id"].cpu().numpy()
+        X_value = np.concatenate(
+            [
+                self.dna_onehot_encoder.transform(dna_ids[:, [c]]).toarray()
+                for c in range(dna_ids.shape[1])
+            ]
+            + [
+                self.protein_onehot_encoder.transform(protein_ids[:, [c]]).toarray()
+                for c in range(protein_ids.shape[1])
+            ]
+            + [
+                self.second_onehot_encoder.transform(second_ids[:, [c]]).toarray()
+                for c in range(second_ids.shape[1])
+            ],
+            axis=1,
+        )
+
+        if label is not None:
+            y_value = label["bind"].cpu().numpy()
+            return X_value, y_value
+
+        return X_value
+
     @abstractmethod
     def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
         pass
@@ -135,6 +171,8 @@ class GaussianNB(SKBase):
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
         """
+        super().__init__()
+
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = naive_bayes.GaussianNB()
@@ -195,6 +233,8 @@ class SGDClassifier(SKLinearBase):
             l1_ratio: ratio of l1 regularization, only relevant for elasticnet.
             random_state: use for shuffling data.
         """
+        super().__init__()
+
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = linear_model.SGDClassifier(
@@ -229,6 +269,8 @@ class Perceptron(SKLinearBase):
             l1_ratio: ratio of l1 regularization, only relevant for elasticnet.
             random_state: use for shuffling data.
         """
+        super().__init__()
+
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = linear_model.Perceptron(
@@ -258,6 +300,8 @@ class PassiveAggressiveClassifier(SKLinearBase):
             loss: the loss function to be used.
             random_state: use for shuffling data.
         """
+        super().__init__()
+
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
         self.classifier = linear_model.PassiveAggressiveClassifier(
