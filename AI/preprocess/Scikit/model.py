@@ -67,10 +67,12 @@ class SKBase(MLBase):
                 input=batch["input"], label=batch["label"]
             )
 
-            self.classifier.partial_fit(X=X_value, y=y_value)
+            self.classifier.partial_fit(X=X_value, y=y_value, classes=[0, 1])
 
             log_probas = self.predict_log_proba(X_value)
-            train_loss += -(log_probas[np.arange(len(y_value)), y_value].sum().item())
+            train_loss += -(
+                log_probas[np.arange(len(y_value)), y_value.astype(int)].sum().item()
+            )
             train_loss_num += X_value.shape[0]
 
         return train_loss, train_loss_num, float("nan")
@@ -91,14 +93,9 @@ class SKBase(MLBase):
                 input=batch["input"], label=batch["label"]
             )
 
-            score = self.classifier.decision_function(X=X_value)
+            log_probas = self.predict_log_proba(X_value)
             eval_loss += -(
-                (np.ma.log(special.expit(score)).filled(-1000) * y_value).sum().item()
-            )
-            eval_loss += -(
-                (np.ma.log(special.expit(-score)).filled(-1000) * (1 - y_value))
-                .sum()
-                .item()
+                log_probas[np.arange(len(y_value)), y_value.astype(int)].sum().item()
             )
             eval_loss_num += X_value.shape[0]
             df = self.eval_output(examples, batch, my_generator)
