@@ -19,12 +19,8 @@ tmp_b_c.txt
 /AI/dataset/balanced_small_data
 /AI/dataset/inference_data.csv
 /AI/dataset/extra/data
-AI_models/bind_transformer/checkpoints
-AI_models/bind_transformer/pipeline
-AI_models/DeepZF/Data
-AI_models/DeepZF/BindZF_predictor/code/model.p
-AI_models/DeepZF/Results
-AI_models/DeepZF/zinc_finger_protein_motifs
-AI_models/bind_transformer/config_custom.ini
-*.bak
+/DeepZF/Data
+/DeepZF/BindZF_predictor/code/model.p
+/DeepZF/Results
+/DeepZF/zinc_finger_protein_motifs
 /paper/benchmark
