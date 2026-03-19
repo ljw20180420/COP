@@ -43,6 +43,15 @@ do
                 --train.device cpu \
                 --model ${model_config}
         ;;
+        DeepZF)
+            ./run.py train \
+                --config ${train_config} \
+                --train.output_dir ${output_dir} \
+                --train.trial_name default \
+                --train.num_epochs 1 \
+                --train.evaluation_only false \
+                --model ${model_config}
+        ;;
         *)
             ./run.py train \
                 --config ${train_config} \
