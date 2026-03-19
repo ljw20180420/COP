@@ -63,6 +63,7 @@ class SKBase(MLBase):
         my_generator: MyGenerator,
         my_optimizer: MyOptimizer,
         my_profiler: MyProfiler,
+        metrics: dict,
     ) -> tuple:
         train_loss, train_loss_num = 0.0, 0.0
         for examples in tqdm(train_dataloader):

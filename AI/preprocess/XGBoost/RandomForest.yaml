@@ -3,4 +3,6 @@ init_args:
   protein_feature: AI/dataset/protein_feature.csv
   protein_length: 200
   dna_length: 100
-  num_parallel_tree: 30
+  subsample: 0.8
+  colsample_bynode: 0.8
+  num_parallel_tree: 10

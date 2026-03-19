@@ -3,5 +3,7 @@ init_args:
   protein_feature: AI/dataset/protein_feature.csv
   protein_length: 200
   dna_length: 100
+  subsample: 0.8
+  colsample_bynode: 0.8
   eta: 0.01
-  num_boost_round: 6
+  num_boost_round: 33

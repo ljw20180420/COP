@@ -80,6 +80,7 @@ class LightGBM(MLBase):
         my_generator: MyGenerator,
         my_optimizer: MyOptimizer,
         my_profiler: MyProfiler,
+        metrics: dict,
     ) -> tuple:
         if not hasattr(self, "train_data"):
             X_train, y_train = [], []

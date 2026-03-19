@@ -24,7 +24,7 @@ do
 
     title Train
     case ${model_cls} in
-        XGBoost|LightGBM)
+        LightGBM)
             ./run.py train \
                 --config ${train_config} \
                 --train.output_dir ${output_dir} \
@@ -33,7 +33,7 @@ do
                 --train.device cpu \
                 --model ${model_config}
         ;;
-        RandomForest|DecisionTree)
+        XGBoost|RandomForest|DecisionTree)
             ./run.py train \
                 --config ${train_config} \
                 --train.output_dir ${output_dir} \

@@ -242,6 +242,7 @@ class DeepZF:
         my_generator: MyGenerator,
         my_optimizer: MyOptimizer,
         my_profiler: MyProfiler,
+        metrics: dict,
     ) -> tuple:
         self.motifs = self.get_motifs()
 
