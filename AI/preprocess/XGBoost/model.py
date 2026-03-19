@@ -5,7 +5,6 @@ import pandas as pd
 import torch
 import xgboost as xgb
 from common_ai.generator import MyGenerator
-from common_ai.metric import MyMetricAbstract
 from common_ai.optimizer import MyOptimizer
 from common_ai.profiler import MyProfiler
 from common_ai.train import MyTrain
@@ -33,7 +32,7 @@ class XGBoost(MLBase):
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
             subsample: subsample ratio of the training instances.
-            colsample_bynode: the subsample ratio of columns for each node (split).
+            colsample_bynode: subsample ratio of columns for each node (split).
             eta: Shrink of step size after each round.
             num_boost_round: Number of trees generated in single epochs.
         """
@@ -43,6 +42,8 @@ class XGBoost(MLBase):
         self.num_boost_round = num_boost_round
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
+
+        self.booster = None
 
     def eval_output(
         self, examples: list[dict], batch: dict, my_generator: MyGenerator
@@ -57,8 +58,7 @@ class XGBoost(MLBase):
                 data=X_value,
                 feature_types=["c"] * X_value.shape[-1],
                 enable_categorical=True,
-            ),
-            iteration_range=(0, self.best_iteration + 1),
+            )
         )
         df = pd.DataFrame(
             {
@@ -72,43 +72,21 @@ class XGBoost(MLBase):
         return df
 
     def state_dict(self) -> dict:
-        return {
-            "booster": torch.frombuffer(self.booster.save_raw(), dtype=torch.uint8),
-            "best_iteration": self.best_iteration,
-        }
+        return {"booster": torch.frombuffer(self.booster.save_raw(), dtype=torch.uint8)}
 
     def load_state_dict(self, state_dict: dict) -> None:
         self.booster = xgb.Booster(
             model_file=bytearray(state_dict["booster"].numpy().tobytes())
         )
-        self.best_iteration = self.state_dict["best_iteration"]
 
-    def _metric(
-        self,
-        predt: np.ndarray,
-        dtrain: xgb.DMatrix,
-        metrics: dict[str, MyMetricAbstract],
-    ) -> tuple[str, dict[str, float]]:
-        metric_loss_dict = {}
-        for metric_name, metric_fun in metrics.items():
-            metric_fun.step(
-                df=pd.DataFrame({"proba": predt}),
-                examples={},
-                batch={"label": {"bind": torch.from_numpy(dtrain.get_label())}},
-            )
-            metric_loss_dict[metric_name] = metric_fun.epoch()
-
-        return "custom_metric", metric_loss_dict
-
-    def _train_booster(self, my_generator: MyGenerator, metrics: dict) -> dict:
+    def _train_booster(self, my_generator: MyGenerator) -> dict:
         evals_result = {}
         self.booster = xgb.train(
             params={
-                "booster": "gbtree",
+                "device": self.device,
                 "subsample": self.subsample,
                 "colsample_bynode": self.colsample_bynode,
                 "eta": self.eta,
-                "device": self.device,
                 "objective": "binary:logistic",
                 "seed": my_generator.seed,
             },
@@ -116,14 +94,8 @@ class XGBoost(MLBase):
             num_boost_round=self.num_boost_round,
             evals=[(self.Xy_train, "train"), (self.Xy_eval, "eval")],
             evals_result=evals_result,
-            custom_metric=lambda predt, dmatrix, metrics=metrics: self._metric(
-                predt, dmatrix, metrics
-            ),
+            xgb_model=self.booster,
         )
-
-        self.best_iteration = np.argmin(
-            [cm["AccuracyMetric"] for cm in evals_result["eval"]["custom_metric"]]
-        ).item()
 
         return evals_result
 
@@ -135,7 +107,7 @@ class XGBoost(MLBase):
         my_generator: MyGenerator,
         my_optimizer: MyOptimizer,
         my_profiler: MyProfiler,
-        metrics: dict,
+        metrcis: dict,
     ) -> tuple:
         if not hasattr(self, "Xy_train"):
             X_train, y_train = [], []
@@ -182,11 +154,10 @@ class XGBoost(MLBase):
                 enable_categorical=True,
             )
 
-        self.evals_result = self._train_booster(my_generator, metrics)
+        evals_result = self._train_booster(my_generator)
 
         return (
-            self.evals_result["train"]["logloss"][self.best_iteration].item()
-            * self.Xy_train.num_row(),
+            np.mean(evals_result["train"]["logloss"]).item() * self.Xy_train.num_row(),
             self.Xy_train.num_row(),
             float("nan"),
         )
@@ -199,13 +170,25 @@ class XGBoost(MLBase):
         metrics: dict,
     ) -> tuple:
         eval_loss = (
-            self.evals_result["eval"]["logloss"][self.best_iteration].item()
+            float(self.booster.eval(self.Xy_eval).split(":")[1])
             * self.Xy_eval.num_row()
         )
+        for examples in tqdm(eval_dataloader):
+            batch = self.data_collator(
+                examples, output_label=True, my_generator=my_generator
+            )
+            df = self.eval_output(examples, batch, my_generator)
+            for metric_name, metric_fun in metrics.items():
+                metric_fun.step(
+                    df=df,
+                    examples=examples,
+                    batch=batch,
+                )
 
-        metric_loss_dict = self.evals_result["eval"]["custom_metric"][
-            self.best_iteration
-        ]
+        metric_loss_dict = {}
+        for metric_name, metric_fun in metrics.items():
+            metric_loss_dict[metric_name] = metric_fun.epoch()
+        print(metric_loss_dict)
 
         return eval_loss, self.Xy_eval.num_row(), metric_loss_dict
 
@@ -229,7 +212,7 @@ class RandomForest(XGBoost):
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
             subsample: subsample ratio of the training instances.
-            colsample_bynode: the subsample ratio of columns for each node (split).
+            colsample_bynode: subsample ratio of columns for each node (split).
             num_parallel_tree: the size of the forest being trained.
         """
         self.subsample = subsample
@@ -238,13 +221,15 @@ class RandomForest(XGBoost):
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
-    def _train_booster(self, my_generator: MyGenerator, metrics: dict) -> dict:
+        self.booster = None
+
+    def _train_booster(self, my_generator: MyGenerator) -> dict:
         evals_result = {}
         self.booster = xgb.train(
             params={
                 "booster": "gbtree",
-                "subsample": self.subsample,
-                "colsample_bynode": self.colsample_bynode,
+                "subsample": 0.8,
+                "colsample_bynode": 0.8,
                 "num_parallel_tree": self.num_parallel_tree,
                 "eta": 1,
                 "device": self.device,
@@ -255,12 +240,8 @@ class RandomForest(XGBoost):
             num_boost_round=1,
             evals=[(self.Xy_train, "train")],
             evals_result=evals_result,
-            custom_metric=lambda predt, dmatrix, metrics=metrics: self._metric(
-                predt, dmatrix, metrics
-            ),
+            xgb_model=self.booster,
         )
-
-        self.best_iteration = 0
 
         return evals_result
 
@@ -281,7 +262,7 @@ class DecisionTree(RandomForest):
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
             subsample: subsample ratio of the training instances.
-            colsample_bynode: the subsample ratio of columns for each node (split).
+            colsample_bynode: subsample ratio of columns for each node (split).
         """
         super().__init__(
             protein_feature,

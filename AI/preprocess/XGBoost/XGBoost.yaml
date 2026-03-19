@@ -6,4 +6,4 @@ init_args:
   subsample: 0.8
   colsample_bynode: 0.8
   eta: 0.01
-  num_boost_round: 33
+  num_boost_round: 1
