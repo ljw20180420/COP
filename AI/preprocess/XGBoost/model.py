@@ -73,24 +73,6 @@ class XGBoost(MLBase):
             model_file=bytearray(state_dict["booster"].numpy().tobytes())
         )
 
-    def _train_booster(self, my_generator: MyGenerator) -> dict:
-        evals_result = {}
-        self.booster = xgb.train(
-            params={
-                "device": self.device,
-                "eta": self.eta,
-                "objective": "binary:logistic",
-                "seed": my_generator.seed,
-            },
-            dtrain=self.Xy_train,
-            num_boost_round=self.num_boost_round,
-            evals=[(self.Xy_train, "train")],
-            evals_result=evals_result,
-            xgb_model=self.booster,
-        )
-
-        return evals_result
-
     def my_train_epoch(
         self,
         my_train: MyTrain,
@@ -122,21 +104,6 @@ class XGBoost(MLBase):
                 enable_categorical=True,
             )
 
-        evals_result = self._train_booster(my_generator)
-
-        return (
-            np.mean(evals_result["train"]["logloss"]).item() * self.Xy_train.num_row(),
-            self.Xy_train.num_row(),
-            float("nan"),
-        )
-
-    def my_eval_epoch(
-        self,
-        my_train: MyTrain,
-        eval_dataloader: torch.utils.data.DataLoader,
-        my_generator: MyGenerator,
-        metrics: dict,
-    ) -> tuple:
         if not hasattr(self, "Xy_eval"):
             X_eval, y_eval = [], []
             for examples in tqdm(eval_dataloader):
@@ -160,6 +127,34 @@ class XGBoost(MLBase):
                 enable_categorical=True,
             )
 
+        evals_result = {}
+        self.booster = xgb.train(
+            params={
+                "device": self.device,
+                "eta": self.eta,
+                "objective": "binary:logistic",
+                "seed": my_generator.seed,
+            },
+            dtrain=self.Xy_train,
+            num_boost_round=self.num_boost_round,
+            evals=[(self.Xy_train, "train"), (self.Xy_eval, "eval")],
+            evals_result=evals_result,
+            xgb_model=self.booster,
+        )
+
+        return (
+            np.mean(evals_result["train"]["logloss"]).item() * self.Xy_train.num_row(),
+            self.Xy_train.num_row(),
+            float("nan"),
+        )
+
+    def my_eval_epoch(
+        self,
+        my_train: MyTrain,
+        eval_dataloader: torch.utils.data.DataLoader,
+        my_generator: MyGenerator,
+        metrics: dict,
+    ) -> tuple:
         eval_loss = (
             float(self.booster.eval(self.Xy_eval).split(":")[1])
             * self.Xy_eval.num_row()
@@ -179,6 +174,7 @@ class XGBoost(MLBase):
         metric_loss_dict = {}
         for metric_name, metric_fun in metrics.items():
             metric_loss_dict[metric_name] = metric_fun.epoch()
+        print(metric_loss_dict)
 
         return eval_loss, self.Xy_eval.num_row(), metric_loss_dict
 
