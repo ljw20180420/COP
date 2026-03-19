@@ -8,6 +8,7 @@ dependencies:
   - bioconda::ucsc-bedclip
   - bioconda::ucsc-twobittofa
   - bioconda::seqkit
+  - bioconda::meme
   - pip
   - pip:
     - scikit-learn
