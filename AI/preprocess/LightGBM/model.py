@@ -20,6 +20,8 @@ class LightGBM(MLBase):
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
+        subsample: float,
+        colsample_bynode: float,
         eta: float,
         num_boost_round: int,
     ) -> None:
@@ -29,9 +31,13 @@ class LightGBM(MLBase):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
+            subsample: subsample ratio of the training instances.
+            colsample_bynode: subsample ratio of columns for each node (split).
             eta: Shrink of step size after each round.
             num_boost_round: Number of trees generated in single epochs.
         """
+        self.subsample = subsample
+        self.colsample_bynode = colsample_bynode
         self.eta = eta
         self.num_boost_round = num_boost_round
 
@@ -132,10 +138,12 @@ class LightGBM(MLBase):
         eval_result = {}
         self.booster = lgb.train(
             params={
-                "device": self.device,
+                "subsample": self.subsample,
+                "colsample_bynode": self.colsample_bynode,
                 "eta": self.eta,
                 "objective": "binary",
                 "seed": my_generator.seed,
+                "device": self.device,
             },
             train_set=self.train_data,
             num_boost_round=self.num_boost_round,

@@ -23,6 +23,7 @@ class XGBoost(MLBase):
         subsample: float,
         colsample_bynode: float,
         eta: float,
+        max_depth: int,
         num_boost_round: int,
     ) -> None:
         """XGBoost arguments.
@@ -34,11 +35,13 @@ class XGBoost(MLBase):
             subsample: subsample ratio of the training instances.
             colsample_bynode: subsample ratio of columns for each node (split).
             eta: Shrink of step size after each round.
+            max_depth: maximum depth of a tree.
             num_boost_round: Number of trees generated in single epochs.
         """
         self.subsample = subsample
         self.colsample_bynode = colsample_bynode
         self.eta = eta
+        self.max_depth = max_depth
         self.num_boost_round = num_boost_round
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
@@ -83,12 +86,14 @@ class XGBoost(MLBase):
         evals_result = {}
         self.booster = xgb.train(
             params={
-                "device": self.device,
                 "subsample": self.subsample,
                 "colsample_bynode": self.colsample_bynode,
                 "eta": self.eta,
+                "max_depth": self.max_depth,
+                "booster": "gbtree",
                 "objective": "binary:logistic",
                 "seed": my_generator.seed,
+                "device": self.device,
             },
             dtrain=self.Xy_train,
             num_boost_round=self.num_boost_round,
@@ -204,6 +209,7 @@ class RandomForest(XGBoost):
         subsample: float,
         colsample_bynode: float,
         num_parallel_tree: int,
+        max_depth: int,
     ):
         """RandomForest arguments.
 
@@ -214,10 +220,12 @@ class RandomForest(XGBoost):
             subsample: subsample ratio of the training instances.
             colsample_bynode: subsample ratio of columns for each node (split).
             num_parallel_tree: the size of the forest being trained.
+            max_depth: maximum depth of a tree.
         """
         self.subsample = subsample
         self.colsample_bynode = colsample_bynode
         self.num_parallel_tree = num_parallel_tree
+        self.max_depth = max_depth
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
@@ -227,14 +235,15 @@ class RandomForest(XGBoost):
         evals_result = {}
         self.booster = xgb.train(
             params={
-                "booster": "gbtree",
-                "subsample": 0.8,
-                "colsample_bynode": 0.8,
+                "subsample": self.subsample,
+                "colsample_bynode": self.colsample_bynode,
                 "num_parallel_tree": self.num_parallel_tree,
                 "eta": 1,
-                "device": self.device,
+                "max_depth": self.max_depth,
+                "booster": "gbtree",
                 "objective": "binary:logistic",
                 "seed": my_generator.seed,
+                "device": self.device,
             },
             dtrain=self.Xy_train,
             num_boost_round=1,
@@ -252,8 +261,7 @@ class DecisionTree(RandomForest):
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
-        subsample: float,
-        colsample_bynode: float,
+        max_depth: int,
     ):
         """DecisionTree arguments.
 
@@ -261,14 +269,14 @@ class DecisionTree(RandomForest):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
-            subsample: subsample ratio of the training instances.
-            colsample_bynode: subsample ratio of columns for each node (split).
+            max_depth: maximum depth of a tree.
         """
         super().__init__(
             protein_feature,
             protein_length,
             dna_length,
-            subsample,
-            colsample_bynode,
+            subsample=1.0,
+            colsample_bynode=1.0,
             num_parallel_tree=1,
+            max_depth=max_depth,
         )

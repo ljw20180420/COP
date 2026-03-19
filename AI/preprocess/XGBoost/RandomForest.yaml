@@ -5,4 +5,5 @@ init_args:
   dna_length: 100
   subsample: 0.8
   colsample_bynode: 0.8
-  num_parallel_tree: 10
+  num_parallel_tree: 5
+  max_depth: 6

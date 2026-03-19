@@ -3,5 +3,4 @@ init_args:
   protein_feature: AI/dataset/protein_feature.csv
   protein_length: 200
   dna_length: 100
-  subsample: 0.8
-  colsample_bynode: 0.8
+  max_depth: 6
