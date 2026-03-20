@@ -97,9 +97,10 @@ preprocess_model_cls_pairs = [
     ("XGBoost", "XGBoost"),
     ("XGBoost", "RandomForest"),
     ("XGBoost", "DecisionTree"),
-    ("Scikit", "GaussianNB"),
+    ("Scikit", "CategoricalNB"),
     ("Scikit", "SGDClassifier"),
     ("Scikit", "Perceptron"),
+    ("Scikit", "PassiveAggressiveClassifier"),
 ]
 data_names = ["mouse_C2H2"]
 metrics = [
