@@ -1,0 +1,6 @@
+class_path: AI.preprocess.DeepZF.model.DeepZF
+init_args:
+  protein_feature: AI/dataset/protein_feature.csv
+  dna_length: 100
+  zf_padding: 40
+  pwm_thres: 0.5
