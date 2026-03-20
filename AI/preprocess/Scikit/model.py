@@ -273,7 +273,9 @@ class Perceptron(SKLinearBase):
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
-        self.classifier = linear_model.Perceptron(
+        self.classifier = linear_model.SGDClassifier(
+            loss="perceptron",
+            learning_rate="constant",
             penalty=penalty,
             alpha=alpha,
             l1_ratio=l1_ratio,
@@ -288,7 +290,6 @@ class PassiveAggressiveClassifier(SKLinearBase):
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
-        loss: Literal["hinge", "squared_hinge"],
         random_state: int,
     ) -> None:
         """PassiveAggressiveClassifier arguments.
@@ -297,15 +298,17 @@ class PassiveAggressiveClassifier(SKLinearBase):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
-            loss: the loss function to be used.
             random_state: use for shuffling data.
         """
         super().__init__()
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
-        self.classifier = linear_model.PassiveAggressiveClassifier(
-            loss=loss,
+        self.classifier = linear_model.SGDClassifier(
+            loss="hinge",
+            penalty=None,
+            learning_rate="pa1",
+            eta0=1.0,
             n_jobs=-1,
             random_state=random_state,
         )
