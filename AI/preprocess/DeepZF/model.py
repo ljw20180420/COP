@@ -14,6 +14,7 @@ import pandas as pd
 import torch
 from common_ai.generator import MyGenerator
 from common_ai.initializer import MyInitializer
+from common_ai.model import MyModelAbstract
 from common_ai.optimizer import MyOptimizer
 from common_ai.profiler import MyProfiler
 from common_ai.train import MyTrain
@@ -23,7 +24,7 @@ from tqdm import tqdm
 from .data_collator import DataCollator
 
 
-class DeepZF:
+class DeepZF(MyModelAbstract):
     def __init__(
         self,
         protein_feature: os.PathLike,
@@ -126,7 +127,7 @@ class DeepZF:
                     .transform("max")
                     .clip(upper=self.pwm_thres),
                     pwm=list(
-                        pd.read_csv(tmpdir_path / "pwm.csv", names=["pwm"])["pwm"]
+                        pd.read_csv(tmpdir_path / "PWM.csv", names=["pwm"])["pwm"]
                         .to_numpy()
                         .reshape([-1, 3, 4])
                     ),
@@ -149,9 +150,9 @@ class DeepZF:
                     ["matrix2meme", "-dna"],
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
+                    text=True,
                 ) as process:
-                    process.stdin.write(buf.getvalue())
-                    meme_str = process.stdout.read()
+                    meme_str, _ = process.communicate(input=buf.getvalue())
 
                 meme_str = re.sub(
                     r"\nMOTIF .+ .+\n", f"\nMOTIF {accession}\n", meme_str
@@ -168,7 +169,7 @@ class DeepZF:
                 with open(tmpdir_path / "fimo.meme", "w") as fd:
                     fd.write(self.motifs[accession])
 
-                with open(tmpdir_path / "fimo_in.csv", "w") as fd:
+                with open(tmpdir_path / "fimo.fa", "w") as fd:
                     for idx, (
                         example,
                         dna,
@@ -193,13 +194,15 @@ class DeepZF:
                         "--max-stored-scores",
                         "99999999",
                         (tmpdir_path / "fimo.meme").as_posix(),
-                        (tmpdir_path / "fimo_in.csv").as_posix(),
+                        (tmpdir_path / "fimo.fa").as_posix(),
                     ],
                     capture_output=True,
+                    text=True,
                 )
+
                 dfs.append(
                     pd.read_csv(
-                        io.StringIO(output.stdout.decode()),
+                        io.StringIO(output.stdout),
                         sep="\t",
                         names=[
                             "index",
@@ -213,14 +216,12 @@ class DeepZF:
                             "qValue",
                             "peak",
                         ],
-                    ).assign(score=lambda df: -df["pValue"].log10())[["index", "score"]]
+                    )[["index", "score"]]
                 )
 
         return pd.concat(dfs).sort_values("index")["score"].to_numpy()
 
-    def _select_threshold(
-        self, score: np.ndarray, bind: np.ndarray
-    ) -> tuple[float, float]:
+    def _select_threshold(self, score: np.ndarray, bind: np.ndarray) -> float:
         min_score = min(score)
         max_score = max(score)
 
@@ -232,7 +233,7 @@ class DeepZF:
             if result["accuracy"] > best_accuracy:
                 best_accuracy = result["accuracy"]
                 best_thres = thres
-        return best_thres, best_accuracy
+        return best_thres
 
     def _predict_proba(self, score: np.ndarray) -> np.ndarray:
         return special.expit(score - self.best_thres)
@@ -268,9 +269,7 @@ class DeepZF:
 
         scores = np.concatenate(scores)
         binds = np.concatenate(binds)
-        self.best_thres, best_accuracy = self._select_threshold(
-            score=scores, bind=binds
-        )
+        self.best_thres = self._select_threshold(score=scores, bind=binds)
 
         log_proba = self._predict_log_proba(scores)
         train_loss = -log_proba[np.arange(len(binds)), binds.astype(int)].sum().item()

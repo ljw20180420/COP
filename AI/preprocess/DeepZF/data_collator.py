@@ -28,7 +28,7 @@ class DataCollator:
                 zf_start = result.span()[0]
                 zf_end = result.span()[1]
                 zf_ctx = (
-                    sequence[max(0, zf_start - zf_padding), zf_start]
+                    sequence[max(0, zf_start - zf_padding) : zf_start]
                     + result.group(0)
                     + sequence[zf_end : zf_end + zf_padding]
                 )
