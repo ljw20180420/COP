@@ -1,10 +1,10 @@
 import io
 import os
 import pathlib
+import pickle
 import re
 import subprocess
 import tempfile
-from typing import Optional
 
 import evaluate
 import jsonargparse
@@ -17,6 +17,7 @@ from common_ai.initializer import MyInitializer
 from common_ai.optimizer import MyOptimizer
 from common_ai.profiler import MyProfiler
 from common_ai.train import MyTrain
+from scipy import special
 from tqdm import tqdm
 
 from .data_collator import DataCollator
@@ -48,12 +49,9 @@ class DeepZF:
     def eval_output(
         self, examples: list[dict], batch: dict, my_generator: MyGenerator
     ) -> pd.DataFrame:
-        X_value = self._get_feature(
-            input=batch["input"],
-            label=None,
-        )
-        batch_size = X_value.shape[0]
-        probas = self.booster.predict(data=X_value)
+        scores = self._get_scores(batch["input"], examples)
+        batch_size = len(scores)
+        probas = self._predict_proba(scores)
         df = pd.DataFrame(
             {
                 "sample_idx": np.arange(batch_size),
@@ -66,16 +64,18 @@ class DeepZF:
         return df
 
     def state_dict(self) -> dict:
-        # TODO: save threshold and meme strings
-        # torch.frombuffer(bytearray(meme_str.encode()), dtype=torch.uint8)
-        return {}
+        return {
+            "motifs": torch.frombuffer(
+                bytearray(pickle.dumps(self.motifs)), dtype=torch.uint8
+            ),
+            "best_thres": self.best_thres,
+        }
 
     def load_state_dict(self, state_dict: dict) -> None:
-        # TODO: load threshold and meme strings
-        # state_dict["meme_str"].numpy().tobytes().decode()
-        pass
+        self.motifs = pickle.loads(state_dict["motifs"].numpy().tobytes())
+        self.best_thres = state_dict["best_thres"]
 
-    def get_motifs(self) -> dict:
+    def _get_motifs(self) -> dict:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = pathlib.Path(tmpdir)
             with open(tmpdir_path / "input.csv", "w") as fd:
@@ -160,25 +160,25 @@ class DeepZF:
 
         return motifs
 
-    def get_score(self, input: dict) -> np.ndarray:
+    def _get_scores(self, input: dict, examples: dict) -> np.ndarray:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = pathlib.Path(tmpdir)
             dfs = []
-            for accession in set(input["protein"]):
+            for accession in set([example["protein"] for example in examples]):
                 with open(tmpdir_path / "fimo.meme", "w") as fd:
                     fd.write(self.motifs[accession])
 
                 with open(tmpdir_path / "fimo_in.csv", "w") as fd:
                     for idx, (
-                        protein,
+                        example,
                         dna,
                     ) in enumerate(
                         zip(
-                            input["protein"],
+                            examples,
                             input["dna"],
                         )
                     ):
-                        if protein != accession:
+                        if example["protein"] != accession:
                             continue
                         fd.write(f">{idx}\n{dna}\n")
 
@@ -218,21 +218,33 @@ class DeepZF:
 
         return pd.concat(dfs).sort_values("index")["score"].to_numpy()
 
-    def select_threshold(
+    def _select_threshold(
         self, score: np.ndarray, bind: np.ndarray
     ) -> tuple[float, float]:
-        min_val = min(score)
-        max_val = max(score)
+        min_score = min(score)
+        max_score = max(score)
 
         metric = evaluate.load("AI/metric/accuracy.py")
-        best_result = {"accuracy": -1}
-        for thres in np.linspace(min_val, max_val, 99):
+        best_accuracy = -1
+        for thres in np.linspace(min_score, max_score, 99):
             pred = score >= thres
             result = metric.compute(predictions=pred, references=bind)
-            if result["accuracy"] > best_result["accuracy"]:
-                best_result = result
+            if result["accuracy"] > best_accuracy:
+                best_accuracy = result["accuracy"]
                 best_thres = thres
-        return best_thres, best_result
+        return best_thres, best_accuracy
+
+    def _predict_proba(self, score: np.ndarray) -> np.ndarray:
+        return special.expit(score - self.best_thres)
+
+    def _predict_log_proba(self, score: np.ndarray) -> np.ndarray:
+        return np.stack(
+            [
+                np.maximum(special.log_expit(-score), -1000),
+                np.maximum(special.log_expit(score), -1000),
+            ],
+            axis=1,
+        )
 
     def my_train_epoch(
         self,
@@ -244,22 +256,26 @@ class DeepZF:
         my_profiler: MyProfiler,
         metrics: dict,
     ) -> tuple:
-        self.motifs = self.get_motifs()
+        self.motifs = self._get_motifs()
 
-        scores, binds, train_loss_num = [], [], 0.0
+        scores, binds = [], []
         for examples in tqdm(train_dataloader):
-            train_loss_num += len(examples)
             batch = self.data_collator(
                 examples, output_label=True, my_generator=my_generator
             )
-            scores.append(self.get_score(batch["input"]))
+            scores.append(self._get_scores(batch["input"], examples))
             binds.append(batch["label"]["bind"].cpu().numpy())
 
-        self.best_thres, best_result = self.select_threshold(
-            score=np.concatenate(scores), bind=np.concatenate(binds)
+        scores = np.concatenate(scores)
+        binds = np.concatenate(binds)
+        self.best_thres, best_accuracy = self._select_threshold(
+            score=scores, bind=binds
         )
 
-        return best_result * train_loss_num, train_loss_num, float("nan")
+        log_proba = self._predict_log_proba(scores)
+        train_loss = -log_proba[np.arange(len(binds)), binds.astype(int)].sum().item()
+
+        return train_loss, train_dataloader.dataset.num_rows, float("nan")
 
     def my_eval_epoch(
         self,
@@ -268,15 +284,19 @@ class DeepZF:
         my_generator: MyGenerator,
         metrics: dict,
     ) -> tuple:
-        eval_loss = (
-            self.booster.eval(data=self.eval_data, name="eval")[0][2].item()
-            * self.eval_data.num_data()
-        )
+        eval_loss = 0.0
         for examples in tqdm(eval_dataloader):
             batch = self.data_collator(
                 examples, output_label=True, my_generator=my_generator
             )
+
+            binds = batch["label"]["bind"].cpu().numpy()
             df = self.eval_output(examples, batch, my_generator)
+            log_proba = np.ma.log(df["proba"]).fill(-1000)
+            eval_loss += (
+                -log_proba[np.arange(len(binds)), binds.astype(int)].sum().item()
+            )
+
             for metric_name, metric_fun in metrics.items():
                 metric_fun.step(
                     df=df,
@@ -288,37 +308,13 @@ class DeepZF:
         for metric_name, metric_fun in metrics.items():
             metric_loss_dict[metric_name] = metric_fun.epoch()
 
-        return eval_loss, self.eval_data.num_data(), metric_loss_dict
+        return eval_loss, eval_dataloader.dataset.num_rows, metric_loss_dict
 
     def my_initialize_model(
         self, my_initializer: MyInitializer, my_generator: MyGenerator
     ) -> None:
         pass
 
-    def _get_feature(
-        self,
-        input: dict,
-        label: Optional[dict],
-    ) -> tuple[np.ndarray]:
-        X_value = np.concatenate(
-            (
-                input["dna_id"].cpu().numpy(),
-                input["protein_id"].cpu().numpy(),
-                input["second_id"].cpu().numpy(),
-            ),
-            axis=1,
-        )
-
-        if label is not None:
-            y_value = label["bind"].cpu().numpy()
-            return X_value, y_value
-
-        return X_value
-
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
-        pass
-
-    def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
-        pass
         pass

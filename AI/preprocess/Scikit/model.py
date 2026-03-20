@@ -33,7 +33,7 @@ class SKBase(MLBase):
             label=None,
         )
         batch_size = X_value.shape[0]
-        probas = self.predict_proba(X_value)
+        probas = self._predict_proba(X_value)
         df = pd.DataFrame(
             {
                 "sample_idx": np.arange(batch_size),
@@ -65,7 +65,7 @@ class SKBase(MLBase):
         my_profiler: MyProfiler,
         metrics: dict,
     ) -> tuple:
-        train_loss, train_loss_num = 0.0, 0.0
+        train_loss = 0.0
         for examples in tqdm(train_dataloader):
             batch = self.data_collator(
                 examples, output_label=True, my_generator=my_generator
@@ -76,13 +76,12 @@ class SKBase(MLBase):
 
             self.classifier.partial_fit(X=X_value, y=y_value, classes=[0, 1])
 
-            log_probas = self.predict_log_proba(X_value)
-            train_loss += -(
-                log_probas[np.arange(len(y_value)), y_value.astype(int)].sum().item()
+            log_probas = self._predict_log_proba(X_value)
+            train_loss += (
+                -log_probas[np.arange(len(y_value)), y_value.astype(int)].sum().item()
             )
-            train_loss_num += X_value.shape[0]
 
-        return train_loss, train_loss_num, float("nan")
+        return train_loss, train_dataloader.dataset.num_rows, float("nan")
 
     def my_eval_epoch(
         self,
@@ -91,7 +90,7 @@ class SKBase(MLBase):
         my_generator: MyGenerator,
         metrics: dict,
     ) -> tuple:
-        eval_loss, eval_loss_num = 0.0, 0.0
+        eval_loss = 0.0
         for examples in tqdm(eval_dataloader):
             batch = self.data_collator(
                 examples, output_label=True, my_generator=my_generator
@@ -100,11 +99,10 @@ class SKBase(MLBase):
                 input=batch["input"], label=batch["label"]
             )
 
-            log_probas = self.predict_log_proba(X_value)
-            eval_loss += -(
-                log_probas[np.arange(len(y_value)), y_value.astype(int)].sum().item()
+            log_probas = self._predict_log_proba(X_value)
+            eval_loss += (
+                -log_probas[np.arange(len(y_value)), y_value.astype(int)].sum().item()
             )
-            eval_loss_num += X_value.shape[0]
             df = self.eval_output(examples, batch, my_generator)
             for metric_name, metric_fun in metrics.items():
                 metric_fun.step(
@@ -118,14 +116,14 @@ class SKBase(MLBase):
             metric_loss_dict[metric_name] = metric_fun.epoch()
         print(metric_loss_dict)
 
-        return eval_loss, eval_loss_num, metric_loss_dict
+        return eval_loss, eval_dataloader.dataset.num_rows, metric_loss_dict
 
     @abstractmethod
-    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+    def _predict_proba(self, X_value: np.ndarray) -> np.ndarray:
         pass
 
     @abstractmethod
-    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+    def _predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
         pass
 
 
@@ -149,10 +147,10 @@ class CategoricalNB(SKBase):
 
         self.classifier = naive_bayes.CategoricalNB()
 
-    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+    def _predict_proba(self, X_value: np.ndarray) -> np.ndarray:
         return self.classifier.predict_proba(X_value)[:, 1]
 
-    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+    def _predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
         return self.classifier.predict_log_proba(X_value)
 
 
@@ -187,15 +185,15 @@ class SKLinearBase(SKBase):
 
         return X_value
 
-    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+    def _predict_proba(self, X_value: np.ndarray) -> np.ndarray:
         return special.expit(self.classifier.decision_function(X=X_value))
 
-    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+    def _predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
         score = self.classifier.decision_function(X=X_value)
         return np.stack(
             [
-                np.ma.log(special.expit(-score)).filled(-1000),
-                np.ma.log(special.expit(score)).filled(-1000),
+                np.maximum(special.log_expit(-score), -1000),
+                np.maximum(special.log_expit(score), -1000),
             ],
             axis=1,
         )

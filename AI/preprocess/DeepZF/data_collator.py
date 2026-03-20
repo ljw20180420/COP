@@ -43,7 +43,7 @@ class DataCollator:
     def __call__(
         self, examples: list[dict], output_label: bool, my_generator: MyGenerator
     ) -> dict[str, dict]:
-        proteins, dnas = [], []
+        dnas = []
         if output_label:
             binds = []
         for example in examples:
@@ -55,15 +55,12 @@ class DataCollator:
                 dna = "c" + dna + (self.dna_length - len(dna)) * "m"
             dnas.append(dna)
 
-            proteins.append(example["protein"])
-
             if output_label:
                 binds.append(example["bind"])
 
         if output_label:
             return {
                 "input": {
-                    "protein": proteins,
                     "dna": dnas,
                 },
                 "label": {
@@ -72,7 +69,6 @@ class DataCollator:
             }
         return {
             "input": {
-                "protein": proteins,
                 "dna": dnas,
             },
         }
