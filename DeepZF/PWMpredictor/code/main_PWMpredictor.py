@@ -1,6 +1,6 @@
-import tensorflow as tf
-from models_PWMpredictor import *
 import argparse
+
+from models_PWMpredictor import *
 
 
 def user_input():
