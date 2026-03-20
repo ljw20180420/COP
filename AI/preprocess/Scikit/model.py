@@ -145,7 +145,11 @@ class CategoricalNB(SKBase):
 
         self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
 
-        self.classifier = naive_bayes.CategoricalNB()
+        self.classifier = naive_bayes.CategoricalNB(
+            min_categories=[7] * (dna_length + 1)
+            + [26] * (protein_length + 2)
+            + [12] * protein_length
+        )
 
     def _predict_proba(self, X_value: np.ndarray) -> np.ndarray:
         return self.classifier.predict_proba(X_value)[:, 1]
