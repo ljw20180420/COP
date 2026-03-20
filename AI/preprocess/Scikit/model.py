@@ -120,6 +120,43 @@ class SKBase(MLBase):
 
         return eval_loss, eval_loss_num, metric_loss_dict
 
+    @abstractmethod
+    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+        pass
+
+
+class CategoricalNB(SKBase):
+    def __init__(
+        self,
+        protein_feature: os.PathLike,
+        protein_length: int,
+        dna_length: int,
+    ) -> None:
+        """CategoricalNB arguments.
+
+        Args:
+            protein_feature: file contains info for mouse C2H2 zinc fingers.
+            protein_length: maximally allowed protein length.
+            dna_length: maximally allowed DNA length.
+        """
+        super().__init__()
+
+        self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
+
+        self.classifier = naive_bayes.CategoricalNB()
+
+    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
+        return self.classifier.predict_proba(X_value)[:, 1]
+
+    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
+        return self.classifier.predict_log_proba(X_value)
+
+
+class SKLinearBase(SKBase):
     def _get_feature(
         self,
         input: dict,
@@ -150,43 +187,6 @@ class SKBase(MLBase):
 
         return X_value
 
-    @abstractmethod
-    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
-        pass
-
-    @abstractmethod
-    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
-        pass
-
-
-class GaussianNB(SKBase):
-    def __init__(
-        self,
-        protein_feature: os.PathLike,
-        protein_length: int,
-        dna_length: int,
-    ) -> None:
-        """GaussianNB arguments.
-
-        Args:
-            protein_feature: file contains info for mouse C2H2 zinc fingers.
-            protein_length: maximally allowed protein length.
-            dna_length: maximally allowed DNA length.
-        """
-        super().__init__()
-
-        self.data_collator = DataCollator(protein_feature, protein_length, dna_length)
-
-        self.classifier = naive_bayes.GaussianNB()
-
-    def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
-        return self.classifier.predict_proba(X_value)[:, 1]
-
-    def predict_log_proba(self, X_value: np.ndarray) -> np.ndarray:
-        return self.classifier.predict_log_proba(X_value)
-
-
-class SKLinearBase(SKBase):
     def predict_proba(self, X_value: np.ndarray) -> np.ndarray:
         return special.expit(self.classifier.decision_function(X=X_value))
 

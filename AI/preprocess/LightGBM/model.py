@@ -78,6 +78,28 @@ class LightGBM(MLBase):
             model_str=state_dict["booster"].numpy().tobytes().decode()
         )
 
+    def _train_booster(self, my_generator: MyGenerator) -> dict:
+        eval_result = {}
+        self.booster = lgb.train(
+            params={
+                "subsample": self.subsample,
+                "colsample_bynode": self.colsample_bynode,
+                "eta": self.eta,
+                "objective": "binary",
+                "seed": my_generator.seed,
+                "device": self.device,
+            },
+            train_set=self.train_data,
+            num_boost_round=self.num_boost_round,
+            valid_sets=[self.train_data, self.eval_data],
+            valid_names=["train", "eval"],
+            init_model=self.booster,
+            keep_training_booster=True,
+            callbacks=[lgb.record_evaluation(eval_result)],
+        )
+
+        return eval_result
+
     def my_train_epoch(
         self,
         my_train: MyTrain,
@@ -135,24 +157,7 @@ class LightGBM(MLBase):
                 free_raw_data=False,
             )
 
-        eval_result = {}
-        self.booster = lgb.train(
-            params={
-                "subsample": self.subsample,
-                "colsample_bynode": self.colsample_bynode,
-                "eta": self.eta,
-                "objective": "binary",
-                "seed": my_generator.seed,
-                "device": self.device,
-            },
-            train_set=self.train_data,
-            num_boost_round=self.num_boost_round,
-            valid_sets=[self.train_data, self.eval_data],
-            valid_names=["train", "eval"],
-            init_model=self.booster,
-            keep_training_booster=True,
-            callbacks=[lgb.record_evaluation(eval_result)],
-        )
+        eval_result = self._train_booster(my_generator)
 
         return (
             np.mean(eval_result["train"]["binary_logloss"]).item()
