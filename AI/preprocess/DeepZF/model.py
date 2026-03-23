@@ -164,6 +164,20 @@ class DeepZF(MyModelAbstract):
             tmpdir_path = pathlib.Path(tmpdir)
             dfs = []
             for accession in set([example["protein"] for example in examples]):
+                if accession not in self.motifs:
+                    dfs.append(
+                        pd.DataFrame(
+                            {
+                                "index": [
+                                    idx
+                                    for idx, example in enumerate(examples)
+                                    if example["protein"] == accession
+                                ],
+                            }
+                        ).assign(score=float("nan"))
+                    )
+                    continue
+
                 with open(tmpdir_path / "fimo.meme", "w") as fd:
                     fd.write(self.motifs[accession])
 
