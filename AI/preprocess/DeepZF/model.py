@@ -66,14 +66,12 @@ class DeepZF(MyModelAbstract):
 
     def state_dict(self) -> dict:
         return {
-            "motifs": torch.frombuffer(
-                bytearray(pickle.dumps(self.motifs)), dtype=torch.uint8
-            ),
+            "motifs": self.motifs,
             "best_thres": self.best_thres,
         }
 
     def load_state_dict(self, state_dict: dict) -> None:
-        self.motifs = pickle.loads(state_dict["motifs"].numpy().tobytes())
+        self.motifs = state_dict["motifs"]
         self.best_thres = state_dict["best_thres"]
 
     def _get_motifs(self) -> dict:
@@ -241,8 +239,8 @@ class DeepZF(MyModelAbstract):
     def _predict_log_proba(self, score: np.ndarray) -> np.ndarray:
         return np.stack(
             [
-                np.maximum(special.log_expit(-score), -1000),
-                np.maximum(special.log_expit(score), -1000),
+                np.maximum(special.log_expit(-(score - self.best_thres)), -1000),
+                np.maximum(special.log_expit(score - self.best_thres), -1000),
             ],
             axis=1,
         )
@@ -291,7 +289,13 @@ class DeepZF(MyModelAbstract):
 
             binds = batch["label"]["bind"].cpu().numpy()
             df = self.eval_output(examples, batch, my_generator)
-            log_proba = np.ma.log(df["proba"]).fill(-1000)
+            log_proba = np.stack(
+                [
+                    np.ma.log(1 - df["proba"]).filled(-1000),
+                    np.ma.log(df["proba"]).filled(-1000),
+                ],
+                axis=1,
+            )
             eval_loss += (
                 -log_proba[np.arange(len(binds)), binds.astype(int)].sum().item()
             )
