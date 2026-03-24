@@ -32,11 +32,21 @@ do
 
     title Train
     case ${model_cls} in
-        XGBoost|LightGBM)
+        LightGBM)
             ./run.py train \
                 --config ${train_config} \
                 --train.output_dir ${output_dir} \
                 --train.trial_name default \
+                --train.evaluation_only false \
+                --train.device cpu \
+                --model ${model_config}
+        ;;
+        XGBoost)
+            ./run.py train \
+                --config ${train_config} \
+                --train.output_dir ${output_dir} \
+                --train.trial_name default \
+                --train.num_epochs 63 \
                 --train.evaluation_only false \
                 --train.device cpu \
                 --model ${model_config}

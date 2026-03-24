@@ -5,6 +5,6 @@ init_args:
   dna_length: 100
   subsample: 0.8
   colsample_bynode: 0.8
-  eta: 0.02
+  eta: 0.01
   max_depth: 6
-  num_boost_round: 1
+  num_boost_round: 3
