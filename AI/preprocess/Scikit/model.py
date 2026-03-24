@@ -114,7 +114,6 @@ class SKBase(MLBase):
         metric_loss_dict = {}
         for metric_name, metric_fun in metrics.items():
             metric_loss_dict[metric_name] = metric_fun.epoch()
-        print(metric_loss_dict)
 
         return eval_loss, eval_dataloader.dataset.num_rows, metric_loss_dict
 
