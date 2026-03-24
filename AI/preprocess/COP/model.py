@@ -192,7 +192,9 @@ class COP(MyModelAbstract, nn.Module):
             "AI/preprocess/epoch_92400_sample_23500000.pkl"
         )
 
-    def eval_output(self, examples: list[dict], batch: dict) -> pd.DataFrame:
+    def eval_output(
+        self, examples: list[dict], batch: dict, my_generator: MyGenerator
+    ) -> pd.DataFrame:
         batch_size = len(examples)
         result = self(input=batch["input"], label=None, my_generator=None)
         probas = F.sigmoid(result["logit"]).cpu().numpy()

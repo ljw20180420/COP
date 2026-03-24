@@ -101,6 +101,8 @@ preprocess_model_cls_pairs = [
     ("Scikit", "SGDClassifier"),
     ("Scikit", "Perceptron"),
     ("Scikit", "PassiveAggressiveClassifier"),
+    ("DeepZF", "DeepZF"),
+    ("COP", "COP"),
 ]
 data_names = ["mouse_C2H2"]
 metrics = [
