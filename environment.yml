@@ -30,3 +30,4 @@ dependencies:
     - HolisticTraceAnalysis
     - plotnine
     - shap
+    - setuptools==81.0.0
