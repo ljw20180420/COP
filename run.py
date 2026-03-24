@@ -5,7 +5,8 @@ import pathlib
 
 import jsonargparse
 import pandas as pd
-from common_ai.config import get_config
+from common_ai.config import get_config, get_train_parser
+from common_ai.hpo import MyHpo
 from common_ai.test import MyTest
 from common_ai.train import MyTrain
 
@@ -44,3 +45,6 @@ elif cfg.subcommand == "infer":
     ).to_csv(
         cfg.infer.output, index=False
     )
+
+elif cfg.subcommand == "hpo":
+    MyHpo(**cfg.hpo.hpo.as_dict())(hpo_parser, get_train_parser)

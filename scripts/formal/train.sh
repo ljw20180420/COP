@@ -14,8 +14,16 @@ train_config=AI/train.yaml
 output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/default
 
 for pre_model in \
-    COP:COP \
-    LightGBM:LightGBM
+    LightGBM:LightGBM \
+    XGBoost:XGBoost \
+    XGBoost:RandomForest \
+    XGBoost:DecisionTree \
+    Scikit:CategoricalNB \
+    Scikit:SGDClassifier \
+    Scikit:Perceptron \
+    Scikit:PassiveAggressiveClassifier \
+    DeepZF:DeepZF \
+    COP:COP
 do
     title ${pre_model}
 

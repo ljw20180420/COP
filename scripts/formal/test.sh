@@ -15,8 +15,16 @@ output_dir=${OUTPUT_DIR:-$HOME"/MOTIF_results"}/formal/default
 data_name=mouse_C2H2
 
 for pre_model in \
-    COP:COP \
-    LightGBM:LightGBM
+    LightGBM:LightGBM \
+    XGBoost:XGBoost \
+    XGBoost:RandomForest \
+    XGBoost:DecisionTree \
+    Scikit:CategoricalNB \
+    Scikit:SGDClassifier \
+    Scikit:Perceptron \
+    Scikit:PassiveAggressiveClassifier \
+    DeepZF:DeepZF \
+    COP:COP
 do
     title ${pre_model}
 
