@@ -23,6 +23,7 @@ do
     IFS=":" read preprocess model_cls <<<${pre_model}
     model_config=AI/preprocess/${preprocess}/${model_cls}.yaml
 
+    title Hpo
     # trial_name will be appended by trial id like trial_name-0, trial_name-1 and so on.
     ./run.py hpo \
         --config ${hpo_config} \
