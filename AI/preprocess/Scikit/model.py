@@ -256,6 +256,7 @@ class Perceptron(SKLinearBase):
         protein_feature: os.PathLike,
         protein_length: int,
         dna_length: int,
+        eta0: float,
         penalty: Optional[Literal["l2", "l1", "elasticnet"]],
         alpha: float,
         l1_ratio: float,
@@ -267,6 +268,7 @@ class Perceptron(SKLinearBase):
             protein_feature: file contains info for mouse C2H2 zinc fingers.
             protein_length: maximally allowed protein length.
             dna_length: maximally allowed DNA length.
+            eta0: the initial learning rate.
             penalty: regularization type among l2, l1, l2/l1 (elasticnet), None.
             alpha: constant that multiplies the penalty term, controlling regularization strength.
             l1_ratio: ratio of l1 regularization, only relevant for elasticnet.
@@ -279,6 +281,7 @@ class Perceptron(SKLinearBase):
         self.classifier = linear_model.SGDClassifier(
             loss="perceptron",
             learning_rate="constant",
+            eta0=eta0,
             penalty=penalty,
             alpha=alpha,
             l1_ratio=l1_ratio,

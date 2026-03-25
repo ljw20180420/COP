@@ -368,6 +368,10 @@ generate_inference_data() {
         >> inference_data.csv
 }
 
+generate_unittest_data() {
+    scripts/generate_unittest_data.py
+}
+
 # download_mm9
 
 # download_uniprot_C2H2_protein_table
@@ -398,4 +402,6 @@ generate_inference_data() {
 
 # split_and_balance_small_data
 
-generate_inference_data
+# generate_inference_data
+
+generate_unittest_data

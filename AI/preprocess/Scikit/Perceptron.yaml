@@ -3,6 +3,7 @@ init_args:
   protein_feature: AI/dataset/protein_feature.csv
   protein_length: 200
   dna_length: 100
+  eta0: 0.003
   penalty: l2 # l2, l1, elasticnet, null
   alpha: 0.0001
   l1_ratio: 0.15
