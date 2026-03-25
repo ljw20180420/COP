@@ -32,6 +32,15 @@ do
 
     title Train
     case ${model_cls} in
+        COP)
+            ./run.py train \
+                --config ${train_config} \
+                --train.output_dir ${output_dir} \
+                --train.trial_name default \
+                --train.num_epochs 103 \
+                --train.evaluation_only false \
+                --model ${model_config}
+        ;;
         LightGBM)
             ./run.py train \
                 --config ${train_config} \

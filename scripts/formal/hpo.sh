@@ -32,6 +32,6 @@ do
         --train.train.output_dir ${output_dir} \
         --train.train.trial_name ${trial_name} \
         --train.train.batch_size 100 \
-        --train.train.num_epochs 33 \
+        --train.train.num_epochs 103 \
         --train.model ${model_config}
 done
