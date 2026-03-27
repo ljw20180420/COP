@@ -29,10 +29,12 @@ do
         --config ${hpo_config} \
         --hpo.target AccuracyMetric \
         --hpo.study_name study \
-        --hpo.n_trials 10 \
+        --hpo.n_trials 100 \
+        --hpo.load_if_exists true \
         --train.train.output_dir ${output_dir} \
         --train.train.trial_name ${trial_name} \
-        --train.train.batch_size 100 \
+        --train.train.batch_size 50 \
+        --train.train.accumulate_steps 8 \
         --train.train.num_epochs 103 \
         --train.model ${model_config}
 done
