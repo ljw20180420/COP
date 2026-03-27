@@ -9,11 +9,15 @@ from common_ai.config import get_config, get_train_parser
 from common_ai.hpo import MyHpo
 from common_ai.test import MyTest
 from common_ai.train import MyTrain
+from common_ai.utils import reproduce
 
 from AI.inference import MyInference
 
 # change directory to the current script
 os.chdir(pathlib.Path(__file__).parent)
+
+# improve reproducibility
+reproduce()
 
 # parse arguments
 (
