@@ -18,20 +18,11 @@ class MyDataset(MyDatasetAbstract):
             data_dir: The directory containing csv files.
             name: name of the dataset.
         """
-        super().__init__(
-            data_file=data_dir,
-            name=name,
-            test_ratio=0.05,  # useless dummy placeholder
-            validation_ratio=0.05,  # useless dummy placeholder
-            seed=63036,  # useless dummy placeholder
-        )
+        super().__init__(name=name)
+        self.data_dir = data_dir
 
     def __call__(self) -> datasets.Dataset:
-        ds = datasets.load_dataset(
-            path="csv",
-            name=self.name,
-            data_dir=self.data_file,  # data_file is actually data_dir
-        )
+        ds = datasets.load_dataset(path="csv", name=self.name, data_dir=self.data_dir)
 
         return ds
 
