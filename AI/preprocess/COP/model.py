@@ -211,26 +211,25 @@ class COP(MyModelAbstract, nn.Module):
 
     @classmethod
     def hpo(cls, trial: optuna.Trial, cfg: jsonargparse.Namespace) -> None:
-        cfg.model.init_args.dim_emb = trial.suggest_categorical(
-            "COP/COP/dim_emb",
-            choices=[16, 32, 64],
+        cfg.model.init_args.dim_emb = trial.suggest_int(
+            name="COP/COP/dim_emb", low=16, high=128, step=16
         )
         cfg.model.init_args.heads = trial.suggest_categorical(
-            "COP/COP/heads", choices=[1, 2, 4]
+            name="COP/COP/heads", choices=[1, 2, 4, 8]
         )
-        cfg.model.init_args.dim_head = trial.suggest_categorical(
-            "COP/COP/dim_head",
-            choices=[8, 16, 32],
+        cfg.model.init_args.dim_head = trial.suggest_int(
+            name="COP/COP/dim_head", low=8, high=64, step=8
         )
-        cfg.model.init_args.depth = trial.suggest_int("COP/COP/depth", 1, 3)
-        cfg.model.init_args.dim_ffn = trial.suggest_categorical(
-            "COP/COP/dim_ffn",
-            choices=[32, 64, 128],
+        cfg.model.init_args.depth = trial.suggest_int(
+            name="COP/COP/depth", low=1, high=6
         )
-        cfg.model.init_args.dropout = trial.suggest_float("COP/COP/dropout", 0.01, 0.1)
+        cfg.model.init_args.dim_ffn = trial.suggest_int(
+            name="COP/COP/dim_ffn", low=16, high=256, step=16
+        )
+        cfg.model.init_args.dropout = trial.suggest_float("COP/COP/dropout", 0.01, 0.2)
         cfg.model.init_args.reg_l1 = trial.suggest_float(
-            "COP/COP/reg_l1", 0.000000001, 0.0000001
+            "COP/COP/reg_l1", 0.0000000001, 0.000001, log=True
         )
         cfg.model.init_args.reg_l2 = trial.suggest_float(
-            "COP/COP/reg_l2", 0.000000001, 0.0000001
+            "COP/COP/reg_l2", 0.0000000001, 0.000001, log=True
         )
