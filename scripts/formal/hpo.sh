@@ -11,7 +11,9 @@ function title() {
 }
 
 hpo_config="AI/hpo.yaml"
-output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/hpo
+output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}
+run_type="formal"
+run_name="hpo"
 trial_name="trial"
 data_name=mouse_C2H2
 
@@ -31,7 +33,7 @@ do
         --hpo.study_name study \
         --hpo.n_trials 100 \
         --hpo.load_if_exists true \
-        --train.train.output_dir ${output_dir} \
+        --train.train.output_dir ${output_dir}/${run_type}/${run_name} \
         --train.train.trial_name ${trial_name} \
         --train.train.batch_size 50 \
         --train.train.accumulate_steps 8 \

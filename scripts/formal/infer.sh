@@ -11,7 +11,9 @@ title() {
 }
 
 infer_config=AI/infer.yaml
-output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/default
+output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}
+run_type="formal"
+run_name="default"
 data_name=mouse_C2H2
 
 for pre_model in \
@@ -29,8 +31,8 @@ do
     title ${pre_model}
 
     IFS=":" read preprocess model_cls <<<${pre_model}
-    checkpoints_path=${output_dir}/checkpoints/${preprocess}/${model_cls}/${data_name}/default
-    logs_path=${output_dir}/logs/${preprocess}/${model_cls}/${data_name}/default
+    checkpoints_path=${output_dir}/${run_type}/${run_name}/checkpoints/${preprocess}/${model_cls}/${data_name}/default
+    logs_path=${output_dir}/${run_type}/${run_name}/logs/${preprocess}/${model_cls}/${data_name}/default
 
     title Infer
     ./run.py infer --config ${infer_config} --output ${logs_path}/inference_output.csv --test.checkpoints_path ${checkpoints_path} --test.logs_path ${logs_path}

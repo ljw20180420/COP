@@ -11,7 +11,9 @@ title() {
 }
 
 train_config=AI/train.yaml
-output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}/formal/default
+output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}
+run_type="formal"
+run_name="default"
 
 for pre_model in \
     LightGBM:LightGBM \
@@ -35,7 +37,7 @@ do
         COP)
             ./run.py train \
                 --config ${train_config} \
-                --train.output_dir ${output_dir} \
+                --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name default \
                 --train.num_epochs 103 \
                 --train.evaluation_only false \
@@ -44,7 +46,7 @@ do
         LightGBM)
             ./run.py train \
                 --config ${train_config} \
-                --train.output_dir ${output_dir} \
+                --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name default \
                 --train.evaluation_only false \
                 --train.device cpu \
@@ -53,7 +55,7 @@ do
         XGBoost)
             ./run.py train \
                 --config ${train_config} \
-                --train.output_dir ${output_dir} \
+                --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name default \
                 --train.num_epochs 63 \
                 --train.evaluation_only false \
@@ -63,7 +65,7 @@ do
         RandomForest|DecisionTree)
             ./run.py train \
                 --config ${train_config} \
-                --train.output_dir ${output_dir} \
+                --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name default \
                 --train.num_epochs 1 \
                 --train.evaluation_only false \
@@ -73,7 +75,7 @@ do
         DeepZF)
             ./run.py train \
                 --config ${train_config} \
-                --train.output_dir ${output_dir} \
+                --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name default \
                 --train.num_epochs 1 \
                 --train.evaluation_only false \
@@ -82,7 +84,7 @@ do
         *)
             ./run.py train \
                 --config ${train_config} \
-                --train.output_dir ${output_dir} \
+                --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name default \
                 --train.evaluation_only false \
                 --model ${model_config}
