@@ -10,6 +10,7 @@
 /AI/dataset/inference_data.csv
 /AI/dataset/balanced_unittest_data
 /AI/dataset/extra/data
+/AI/app.yaml
 /DeepZF/Data
 /DeepZF/Results
 /paper/benchmark
