@@ -9,15 +9,17 @@ from common_ai.config import get_config, get_train_parser
 from common_ai.hpo import MyHpo
 from common_ai.test import MyTest
 from common_ai.train import MyTrain
+from common_ai.upload import MyUpload
 from common_ai.utils import reproduce
 
+from AI.gradio_fn import MyGradioFn
 from AI.inference import MyInference
 
 # change directory to the current script
 os.chdir(pathlib.Path(__file__).parent)
 
 # improve reproducibility
-reproduce()
+# reproduce()
 
 # parse arguments
 (
@@ -29,6 +31,7 @@ reproduce()
     app_parser,
     hta_parser,
     hpo_parser,
+    upload_parser,
 ) = get_config()
 cfg = parser.parse_args()
 
@@ -46,9 +49,13 @@ elif cfg.subcommand == "infer":
         infer_df=pd.read_csv(cfg.infer.input),
         test_cfg=cfg.infer.test,
         train_parser=train_parser,
-    ).to_csv(
-        cfg.infer.output, index=False
-    )
+    ).to_csv(cfg.infer.output, index=False)
+
+elif cfg.subcommand == "app":
+    MyGradioFn(cfg.app, train_parser).launch()
 
 elif cfg.subcommand == "hpo":
     MyHpo(**cfg.hpo.hpo.as_dict())(hpo_parser, get_train_parser)
+
+elif cfg.subcommand == "upload":
+    MyUpload(**cfg.upload.as_dict())()
