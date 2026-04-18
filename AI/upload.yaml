@@ -1,0 +1,10 @@
+# output_dir:
+run_type: "formal"
+run_name: "default"
+# preprocess:
+# model_cls:
+data_name: "mouse_C2H2"
+trial_name: "default"
+ignore_patterns:
+  - "*.png"
+  - "*.pdf"
