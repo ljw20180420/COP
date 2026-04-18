@@ -31,7 +31,7 @@ upload_folder(
 )
 upload_file(
     path_or_fileobj="app.py",
-    path_in_repo="app.py",
+    path_in_repo="app_space.py",
     repo_id=f"{username}/COP",
     repo_type="space",
 )
