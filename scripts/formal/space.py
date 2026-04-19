@@ -30,8 +30,8 @@ upload_folder(
     delete_patterns="*",
 )
 upload_file(
-    path_or_fileobj="app.py",
-    path_in_repo="app_space.py",
+    path_or_fileobj="app_space.py",
+    path_in_repo="app.py",
     repo_id=f"{username}/COP",
     repo_type="space",
 )

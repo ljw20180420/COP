@@ -3,3 +3,6 @@ transformers
 torch
 pandas
 jsonargparse
+tbparse
+optuna
+einops
