@@ -1,0 +1,10 @@
+inference:
+  - inference/inference.yaml
+
+test:
+  - checkpoints_path: ljw20180420/COP_COP_mouse_C2H2
+    logs_path: ljw20180420/COP_COP_mouse_C2H2
+    target: AccuracyMetric
+    maximize_target: true
+    overwrite:
+      train.device: cuda

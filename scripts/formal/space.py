@@ -3,10 +3,18 @@
 import os
 import pathlib
 
+import yaml
+
 # change to the project folder
 os.chdir(pathlib.Path(__file__).resolve().parent.parent.parent)
 
 from huggingface_hub import create_repo, upload_file, upload_folder, whoami
+
+# Use cpu in hf space
+with open("AI/app.yaml", "r") as rd, open("AI/app_space.yaml", "w") as wd:
+    app_cfg = yaml.safe_load(rd)
+    app_cfg["test"][0]["overwrite"]["train.device"] = "cpu"
+    yaml.safe_dump(app_cfg, wd)
 
 username = whoami()["name"]
 common_ai_path = f"{os.environ['PYTHONPATH']}/common_ai"
