@@ -6,3 +6,6 @@ jsonargparse
 tbparse
 optuna
 einops
+plotnine
+HolisticTraceAnalysis
+shap
