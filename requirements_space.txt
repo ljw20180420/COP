@@ -9,3 +9,7 @@ einops
 plotnine
 HolisticTraceAnalysis
 shap
+scikit-learn
+evaluate
+torchao
+torchtune

@@ -26,8 +26,19 @@ upload_folder(
     folder_path="AI",
     path_in_repo="AI",
     repo_type="space",
-    ignore_patterns=["__pycache__/*", "**/__pycache__/*", "dataset/*", "*.pkl"],
+    ignore_patterns=[
+        "__pycache__/*",
+        "**/__pycache__/*",
+        "dataset/*",
+        "*.pkl",
+    ],
     delete_patterns="*",
+)
+upload_file(
+    path_or_fileobj="AI/dataset/protein_feature.csv",
+    path_in_repo="AI/dataset/protein_feature.csv",
+    repo_id=f"{username}/COP",
+    repo_type="space",
 )
 upload_file(
     path_or_fileobj="app_space.py",
