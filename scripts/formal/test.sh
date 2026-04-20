@@ -15,6 +15,7 @@ output_dir=${OUTPUT_DIR:-$HOME"/MOTIF_results"}
 run_type="formal"
 run_name="default"
 data_name=mouse_C2H2
+trial_name="default"
 
 for pre_model in \
     LightGBM:LightGBM \
@@ -31,8 +32,8 @@ do
     title ${pre_model}
 
     IFS=":" read preprocess model_cls <<<${pre_model}
-    checkpoints_path=${output_dir}/${run_type}/${run_name}/checkpoints/${preprocess}/${model_cls}/${data_name}/default
-    logs_path=${output_dir}/${run_type}/${run_name}/logs/${preprocess}/${model_cls}/${data_name}/default
+    checkpoints_path=${output_dir}/${run_type}/${run_name}/checkpoints/${preprocess}/${model_cls}/${data_name}/${trial_name}
+    logs_path=${output_dir}/${run_type}/${run_name}/logs/${preprocess}/${model_cls}/${data_name}/${trial_name}
 
     title Test
     for target in \
