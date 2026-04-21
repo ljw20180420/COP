@@ -23,7 +23,7 @@ class MyGradioFn(MyGradioFnAbstract):
         assert len(self.inference_dict) == 1, "more than one model loaded"
         repo_id = list(self.inference_dict.keys())[0]
         assert repo_id == "COP_COP_mouse_C2H2", "model is not COP"
-        self.load_inference(repo_id)
+        self.my_inference = self.load_inference(repo_id)
 
         protein_feature = pd.read_csv("AI/dataset/protein_feature.csv", header=0)
         protein_choices = list(
@@ -59,18 +59,3 @@ class MyGradioFn(MyGradioFnAbstract):
             """,
             flagging_mode="never",
         ).launch()
-
-    def load_inference(self, repo_id: str) -> None:
-        inference_cfg, test_cfg = self.inference_dict[repo_id]
-        inference_module, inference_cls = inference_cfg.class_path.rsplit(".", 1)
-        self.my_inference = getattr(
-            importlib.import_module(inference_module), inference_cls
-        )(**inference_cfg.init_args.as_dict())
-        (
-            _,
-            train_cfg,
-            self.my_inference.logger,
-            self.my_inference.model,
-            self.my_inference.my_generator,
-        ) = MyTest(**test_cfg.as_dict()).load_model(self.train_parser)
-        self.my_inference.batch_size = train_cfg.train.batch_size
