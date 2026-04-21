@@ -7,7 +7,6 @@ from common_ai.test import MyTest
 
 
 class MyInference(MyInferenceAbstract):
-
     def __init__(self, **kwargs):
         """Inference arguments.
 
@@ -22,16 +21,8 @@ class MyInference(MyInferenceAbstract):
         train_parser: jsonargparse.ArgumentParser,
     ) -> pd.DataFrame:
         # load model for the first call
-        if (
-            not hasattr(self, "logger")
-            or not hasattr(self, "model")
-            or not hasattr(self, "my_generator")
-            or not hasattr(self, "batch_size")
-        ):
-            _, train_cfg, self.logger, self.model, self.my_generator = MyTest(
-                **test_cfg.as_dict()
-            ).load_model(train_parser)
-            self.batch_size = train_cfg.train.batch_size
+        if not hasattr(self, "model"):
+            self.load_model(test_cfg, train_parser)
 
         self.logger.info("prepare data loader")
         inference_dataloader = torch.utils.data.DataLoader(
