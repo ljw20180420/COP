@@ -31,3 +31,4 @@ dependencies:
     - plotnine
     - shap
     - setuptools==81.0.0
+    - common_ai

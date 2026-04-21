@@ -17,17 +17,8 @@ with open("AI/app.yaml", "r") as rd, open("AI/app_space.yaml", "w") as wd:
     yaml.safe_dump(app_cfg, wd)
 
 username = whoami()["name"]
-common_ai_path = f"{os.environ['PYTHONPATH']}/common_ai"
 create_repo(
     repo_id=f"{username}/COP", repo_type="space", exist_ok=True, space_sdk="gradio"
-)
-upload_folder(
-    repo_id=f"{username}/COP",
-    folder_path=common_ai_path,
-    path_in_repo="common_ai",
-    repo_type="space",
-    ignore_patterns=["__pycache__/*", "**/__pycache__", "*.yaml"],
-    delete_patterns="*",
 )
 upload_folder(
     repo_id=f"{username}/COP",

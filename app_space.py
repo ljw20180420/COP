@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from common_ai.config import get_app_parser, get_train_parser
 
 from AI.gradio_fn import MyGradioFn
