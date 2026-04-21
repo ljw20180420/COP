@@ -25,13 +25,21 @@ class MyGradioFn(MyGradioFnAbstract):
         assert repo_id == "COP_COP_mouse_C2H2", "model is not COP"
         self.load_inference(repo_id)
 
+        protein_feature = pd.read_csv("AI/dataset/protein_feature.csv", header=0)
+        protein_choices = list(
+            zip(
+                protein_feature["Entry Name"].to_list(),
+                protein_feature["Entry"].to_list(),
+            )
+        )
+
         default_protein = "Q8K1M4"
         default_DNA = "GGTGGGCTTTTAAGTATCCCGGCGCAAAATTGCGATTGCATTTGGGCGGCTGTCATGCGTCCCGTCTCGCAGGATAATAAGCATTAACGGCCGGGAGGCTGACAACATCTTCCCCAGCTACGCCGGTAGAACCGGGTTACCTCATCGCAGGTGCGTGCAGGATAGCCAGCCGACCCTGACCACATCCTTTCGTAAGCGTGTATTGACGATGTAAGTGTCTCTTGGAAACGAAATCTTTTAAGAGCCCCTTAGCTTT"
         gr.Interface(
             fn=self,
             inputs=[
                 gr.Dropdown(
-                    choices=self.my_inference.model.data_collator.protein_ids.index.to_list(),
+                    choices=protein_choices,
                     value=default_protein,
                     label="select mouse C2H2 protein",
                     info="the protein to predict the occupancy",
