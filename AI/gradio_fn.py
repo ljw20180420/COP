@@ -1,10 +1,7 @@
-import importlib
-
 import gradio as gr
 import pandas as pd
 import torch
 from common_ai.gradio_fn import MyGradioFnAbstract
-from common_ai.test import MyTest
 
 
 class MyGradioFn(MyGradioFnAbstract):

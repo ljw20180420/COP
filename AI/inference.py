@@ -3,7 +3,6 @@ import jsonargparse
 import pandas as pd
 import torch
 from common_ai.inference import MyInferenceAbstract
-from common_ai.test import MyTest
 
 
 class MyInference(MyInferenceAbstract):
