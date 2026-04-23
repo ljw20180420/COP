@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import pathlib
 import sys
 
 import pandas as pd
@@ -60,7 +61,8 @@ def balance_pos_neg(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-os.makedirs(f"balanced_{small_data}", exist_ok=True)
-balance_pos_neg(df_train).to_csv(f"balanced_{small_data}/train.csv", index=False)
-balance_pos_neg(df_valid).to_csv(f"balanced_{small_data}/validation.csv", index=False)
-balance_pos_neg(df_test).to_csv(f"balanced_{small_data}/test.csv", index=False)
+balanced_dir = pathlib.Path("balanced_" + small_data.removesuffix(".csv"))
+os.makedirs(balanced_dir, exist_ok=True)
+balance_pos_neg(df_train).to_csv(balanced_dir / "train.csv", index=False)
+balance_pos_neg(df_valid).to_csv(balanced_dir / "validation.csv", index=False)
+balance_pos_neg(df_test).to_csv(balanced_dir / "test.csv", index=False)
