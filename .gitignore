@@ -5,10 +5,8 @@
 /AI/dataset/protein_feature.csv
 /AI/dataset/secondary_structure.csv
 /AI/dataset/uniprot_C2H2_protein_table.tsv
-/AI/dataset/small_data.csv
-/AI/dataset/balanced_unittest_data
-/AI/dataset/balanced_S300_data
-/AI/dataset/balanced_S3000_data
+/AI/dataset/S*_data.csv
+/AI/dataset/balanced_*_data
 /AI/dataset/inference_data.csv
 /AI/dataset/extra/data
 /AI/app_space.yaml

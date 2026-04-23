@@ -325,17 +325,19 @@ generate_small_data() {
     title "generate small data"
     local accessions=()
     collect_accession accessions
-    local small_line_num=300
-    scripts/generate_small_data.py ${small_line_num} "${accessions[@]}"
+    local small_line_num=$1
+    local seed=63036
+    scripts/generate_small_data.py ${small_line_num} ${seed} "${accessions[@]}"
 }
 
 split_and_balance_small_data() {
     title "split and balance small data"
+    local small_data=$1
     local minimal_unbind_summit_distance=300
     local validation_ratio=0.05
     local test_ratio=0.05
     local seed=63036
-    scripts/split_and_balance_small_data.py ${minimal_unbind_summit_distance} ${validation_ratio} ${test_ratio} ${seed}
+    scripts/split_and_balance_small_data.py ${small_data} ${minimal_unbind_summit_distance} ${validation_ratio} ${test_ratio} ${seed}
 }
 
 random_DNA()
@@ -398,10 +400,14 @@ generate_unittest_data() {
 
 # get_protein_pairwise_closest_peak_distance
 
-# generate_small_data
+generate_small_data 300
 
-# split_and_balance_small_data
+split_and_balance_small_data S300_data.csv
+
+generate_small_data 3000
+
+split_and_balance_small_data S3000_data.csv
 
 # generate_inference_data
 
-generate_unittest_data
+# generate_unittest_data

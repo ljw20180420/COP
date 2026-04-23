@@ -6,17 +6,19 @@ import sys
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-minimal_unbind_summit_distance = int(sys.argv[1])
-validation_ratio = float(sys.argv[2])
-test_ratio = float(sys.argv[3])
-seed = int(sys.argv[4])
+small_data = sys.argv[1]
+minimal_unbind_summit_distance = int(sys.argv[2])
+validation_ratio = float(sys.argv[3])
+test_ratio = float(sys.argv[4])
+seed = int(sys.argv[5])
 
-df = pd.read_csv("small_data.csv", header=0).astype({"DNA": "category"})
+df = pd.read_csv(small_data, header=0).astype({"DNA": "category"})
 value_vars = df.columns.tolist()
 value_vars.remove("protein")
 value_vars.remove("DNA")
 df = (
-    df.melt(
+    df
+    .melt(
         id_vars=["protein", "DNA"],
         value_vars=value_vars,
         var_name="actual_protein",
@@ -48,7 +50,8 @@ df_valid, df_test = train_test_split(
 def balance_pos_neg(df: pd.DataFrame) -> pd.DataFrame:
     unbalanced_num = df.shape[0] - 2 * df["bind"].sum()
     df = (
-        pd.concat(
+        pd
+        .concat(
             [df, df.query("bind").sample(n=unbalanced_num, replace=True)],
         )
         .sample(frac=1.0)
@@ -57,7 +60,7 @@ def balance_pos_neg(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-os.makedirs("balanced_small_data", exist_ok=True)
-balance_pos_neg(df_train).to_csv("balanced_small_data/train.csv", index=False)
-balance_pos_neg(df_valid).to_csv("balanced_small_data/validation.csv", index=False)
-balance_pos_neg(df_test).to_csv("balanced_small_data/test.csv", index=False)
+os.makedirs(f"balanced_{small_data}", exist_ok=True)
+balance_pos_neg(df_train).to_csv(f"balanced_{small_data}/train.csv", index=False)
+balance_pos_neg(df_valid).to_csv(f"balanced_{small_data}/validation.csv", index=False)
+balance_pos_neg(df_test).to_csv(f"balanced_{small_data}/test.csv", index=False)
