@@ -3,7 +3,7 @@
 # change to the dir of the script
 cd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # change to the dir to the project
-cd ../..
+cd ../../..
 
 function title() {
     sharps="#################################"
@@ -13,7 +13,7 @@ function title() {
 hpo_config="AI/hpo.yaml"
 output_dir=${OUTPUT_DIR:-"${HOME}/COP_results"}
 run_type="formal"
-run_name="hpo"
+run_name="hpo_S300"
 trial_name="trial"
 data_name=mouse_C2H2
 
@@ -38,5 +38,6 @@ do
         --train.train.batch_size 50 \
         --train.train.accumulate_steps 8 \
         --train.train.num_epochs 103 \
-        --train.model ${model_config}
+        --train.model ${model_config} \
+        --train.dataset.data_dir AI/dataset/balanced_S300_data
 done

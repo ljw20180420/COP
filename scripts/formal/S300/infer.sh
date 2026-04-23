@@ -3,19 +3,19 @@
 # change to the dir of the script
 cd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # change to the dir to the project
-cd ../..
+cd ../../..
 
 title() {
     sharps="#################################"
     printf "\n%s\n%s\n%s\n" ${sharps} $1 ${sharps}
 }
 
-test_config=AI/test.yaml
-output_dir=${OUTPUT_DIR:-$HOME"/COP_results"}
+infer_config=AI/infer.yaml
+output_dir=${OUTPUT_DIR:-"${HOME}/COP_results"}
 run_type="formal"
-run_name="default"
-data_name=mouse_C2H2
+run_name="S300"
 trial_name="default"
+data_name=mouse_C2H2
 
 for pre_model in \
     LightGBM:LightGBM \
@@ -35,17 +35,6 @@ do
     checkpoints_path=${output_dir}/${run_type}/${run_name}/checkpoints/${preprocess}/${model_cls}/${data_name}/${trial_name}
     logs_path=${output_dir}/${run_type}/${run_name}/logs/${preprocess}/${model_cls}/${data_name}/${trial_name}
 
-    title Test
-    for target in \
-        F1Metric \
-        AccuracyMetric \
-        RecallMetric \
-        PrecisionMetric \
-        MatthewsCorrelationMetric \
-        RocAucMetric \
-        PrAucMetric \
-        BrierScoreMetric
-    do
-        ./run.py test --config ${test_config} --checkpoints_path ${checkpoints_path} --logs_path ${logs_path} --target ${target}
-    done
+    title Infer
+    ./run.py infer --config ${infer_config} --output ${logs_path}/inference_output.csv --test.checkpoints_path ${checkpoints_path} --test.logs_path ${logs_path}
 done

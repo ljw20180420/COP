@@ -1,6 +1,6 @@
 # output_dir:
 run_type: "formal"
-run_name: "default"
+run_name: "S3000"
 # preprocess:
 # model_cls:
 data_name: "mouse_C2H2"

@@ -3,7 +3,7 @@
 # change to the dir of the script
 cd $( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # change to the dir to the project
-cd ../..
+cd ../../..
 
 title() {
     sharps="#################################"
@@ -13,7 +13,7 @@ title() {
 train_config=AI/train.yaml
 output_dir=${OUTPUT_DIR:-"${HOME}/COP_results"}
 run_type="formal"
-run_name="default"
+run_name="S300"
 trial_name="default"
 
 for pre_model in \
@@ -42,7 +42,8 @@ do
                 --train.trial_name ${trial_name} \
                 --train.num_epochs 103 \
                 --train.evaluation_only false \
-                --model ${model_config}
+                --model ${model_config} \
+                --train.dataset.data_dir AI/dataset/balanced_S300_data
         ;;
         LightGBM)
             ./run.py train \
@@ -51,7 +52,8 @@ do
                 --train.trial_name ${trial_name} \
                 --train.evaluation_only false \
                 --train.device cpu \
-                --model ${model_config}
+                --model ${model_config} \
+                --train.dataset.data_dir AI/dataset/balanced_S300_data
         ;;
         XGBoost)
             ./run.py train \
@@ -61,7 +63,8 @@ do
                 --train.num_epochs 63 \
                 --train.evaluation_only false \
                 --train.device cpu \
-                --model ${model_config}
+                --model ${model_config} \
+                --train.dataset.data_dir AI/dataset/balanced_S300_data
         ;;
         RandomForest|DecisionTree)
             ./run.py train \
@@ -71,7 +74,8 @@ do
                 --train.num_epochs 1 \
                 --train.evaluation_only false \
                 --train.device cpu \
-                --model ${model_config}
+                --model ${model_config} \
+                --train.dataset.data_dir AI/dataset/balanced_S300_data
         ;;
         DeepZF)
             ./run.py train \
@@ -80,7 +84,8 @@ do
                 --train.trial_name ${trial_name} \
                 --train.num_epochs 1 \
                 --train.evaluation_only false \
-                --model ${model_config}
+                --model ${model_config} \
+                --train.dataset.data_dir AI/dataset/balanced_S300_data
         ;;
         *)
             ./run.py train \
@@ -88,7 +93,8 @@ do
                 --train.output_dir ${output_dir}/${run_type}/${run_name} \
                 --train.trial_name ${trial_name} \
                 --train.evaluation_only false \
-                --model ${model_config}
+                --model ${model_config} \
+                --train.dataset.data_dir AI/dataset/balanced_S300_data
         ;;
     esac
 done
