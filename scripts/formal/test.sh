@@ -11,7 +11,7 @@ title() {
 }
 
 test_config=AI/test.yaml
-output_dir=${OUTPUT_DIR:-$HOME"/MOTIF_results"}
+output_dir=${OUTPUT_DIR:-$HOME"/COP_results"}
 run_type="formal"
 run_name="default"
 data_name=mouse_C2H2

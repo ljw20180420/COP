@@ -11,7 +11,7 @@ title() {
 }
 
 train_config=AI/train.yaml
-output_dir=${OUTPUT_DIR:-"${HOME}/MOTIF_results"}
+output_dir=${OUTPUT_DIR:-"${HOME}/COP_results"}
 run_type="formal"
 run_name="default"
 trial_name="default"

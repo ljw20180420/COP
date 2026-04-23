@@ -59,9 +59,7 @@ def get_test_metric_df(
             "model_cls": "model",
             "value": "accuracy",
         }
-    ).to_latex(
-        "paper/benchmark/default.tex", index=False, escape=True
-    )
+    ).to_latex("paper/benchmark/default.tex", index=False, escape=True)
 
     return test_df
 
@@ -70,7 +68,8 @@ def draw_benchmark(test_df: pd.DataFrame) -> None:
     for data_name in test_df["data_name"].drop_duplicates().to_list():
         for metric in test_df["metric"].drop_duplicates().to_list():
             ax = (
-                test_df.query("data_name == @data_name and metric == @metric")
+                test_df
+                .query("data_name == @data_name and metric == @metric")
                 .sort_values("value")
                 .set_index(
                     keys=[
@@ -115,7 +114,7 @@ metrics = [
     "PrAucMetric",
     "BrierScoreMetric",
 ]
-output_dir = pathlib.Path("/home/ljw/sdc1/MOTIF_results/formal/default/logs")
+output_dir = pathlib.Path("/home/ljw/sdc1/COP_results/formal/default/logs")
 
 test_df = get_test_metric_df(
     preprocess_model_cls_pairs, data_names, metrics, output_dir
