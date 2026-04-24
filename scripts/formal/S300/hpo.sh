@@ -13,7 +13,7 @@ function title() {
 hpo_config="AI/hpo.yaml"
 output_dir=${OUTPUT_DIR:-"${HOME}/COP_results"}
 run_type="formal"
-run_name="hpo_S300"
+run_name="S300"
 trial_name="trial"
 data_name=mouse_C2H2
 
